@@ -22,6 +22,7 @@ public class CreateEducationDTO
             CreatedDate = DateTime.Now,
             ModifiedDate = DateTime.Now,
             Major = createEducationDTO.Degree,
+            Degree = createEducationDTO.Degree,
             Gpa = createEducationDTO.Gpa,
             UniversityGuid = createEducationDTO.UniversityGuid
         };
