@@ -6,9 +6,13 @@ public class Message
     public static readonly string DataDeleted = "Data Deleted";
     public static readonly string DataUpdated = "Data Updated";
 
-    // Error message
+    // Failed Message
     public static readonly string DataNotFound = "Data Not Found";
     public static readonly string FailedToDeleteData = "Failed to Delete Data";
     public static readonly string FailedToUpdateData = "Failed to Update Data";
     public static readonly string FailedToCreateData = "Failed to Create Data";
+
+    // Error Message
+    public static readonly string ErrorOnUpdatingData = "Error on Updating Data!";
+    public static readonly string ErrorOnDeletingData = "Error on Deleting Data!";
 }
