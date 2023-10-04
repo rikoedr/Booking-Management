@@ -182,7 +182,7 @@ public class UniversityController : ControllerBase
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);\
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
 
             return Ok(response);
         }
