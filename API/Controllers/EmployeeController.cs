@@ -10,6 +10,13 @@ using API.Utilities;
 
 namespace API.Controllers;
 
+/*
+ * Employee Controller adalah class untuk yang mengatur penerimaan request dan pengembalian response API.
+ * Class ini terhubung dengan class Employee Repository yang berfungsi untuk melakukan ORM.
+ * Success dan Error Response di dalam controller ini di handle oleh ControllerBase dan Utility Class
+ * terkait format Response API.
+ */
+
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeeController : ControllerBase
@@ -24,9 +31,11 @@ public class EmployeeController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        var result = _repository.GetAll();
+        // Get data collection from repository
+        IEnumerable<Employee> dataCollection = _repository.GetAll();
 
-        if (!result.Any())
+        // Handling empty collection
+        if (!dataCollection.Any())
         {
             return NotFound(new ResponseErrorHandler
             {
@@ -37,8 +46,9 @@ public class EmployeeController : ControllerBase
             });
         }
 
-        var data = result.Select(item => (EmployeeDTO)item);
-        var response = new ResponseOKHandler<IEnumerable<EmployeeDTO>>(data);
+        // Return success response
+        IEnumerable<EmployeeDTO> data = dataCollection.Select(item => (EmployeeDTO)item);
+        ResponseOKHandler<IEnumerable<EmployeeDTO>> response = new ResponseOKHandler<IEnumerable<EmployeeDTO>>(data);
 
         return Ok(response);
     }
@@ -46,9 +56,11 @@ public class EmployeeController : ControllerBase
     [HttpGet("{guid}")]
     public IActionResult GetByGuid(Guid guid)
     {
-        var result = _repository.GetByGuid(guid);
+        // Check if data available
+        Employee? data = _repository.GetByGuid(guid);
 
-        if (result is null)
+        // Handling null data
+        if (data is null)
         {
             return NotFound(new ResponseErrorHandler
             {
@@ -58,7 +70,8 @@ public class EmployeeController : ControllerBase
             });
         }
 
-        var response = (EmployeeDTO)result;
+        // Return success response 
+        EmployeeDTO response = (EmployeeDTO)data;
 
         return Ok(response);
     }
@@ -68,17 +81,19 @@ public class EmployeeController : ControllerBase
     {
         try
         {
+            // Create data from request paylod
             Employee toCreate = employeeDTO;
             toCreate.NIK = GenerateHandler.CreateNIK(_repository.GetLastNIK());
 
-            var result = _repository.Create(toCreate);
-            var response = new ResponseOKHandler<EmployeeDTO>((EmployeeDTO)result);
+            // Return success response
+            Employee? result = _repository.Create(toCreate);
+            ResponseOKHandler<EmployeeDTO> response = new ResponseOKHandler<EmployeeDTO>((EmployeeDTO)result);
 
             return Ok(response);
         }
         catch(ExceptionHandler ex)
         {
-            var response = new ResponseErrorHandler()
+            ResponseErrorHandler response = new ResponseErrorHandler()
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
@@ -95,9 +110,11 @@ public class EmployeeController : ControllerBase
     {
         try
         {
-            var entity = _repository.GetByGuid(employeeDTO.Guid);
+            // Check if data available
+            Employee? data = _repository.GetByGuid(employeeDTO.Guid);
 
-            if(entity is null)
+            // Handling null data
+            if (data is null)
             {
                 return NotFound(new ResponseErrorHandler
                 {
@@ -107,24 +124,27 @@ public class EmployeeController : ControllerBase
                 });
             }
 
+            // Update data
             Employee toUpdate = employeeDTO;
-            toUpdate.NIK = entity.NIK;
-            toUpdate.CreatedDate = entity.CreatedDate;
+            toUpdate.NIK = data.NIK;
+            toUpdate.CreatedDate = data.CreatedDate;
 
-            var result = _repository.Update(toUpdate);
+            bool result = _repository.Update(toUpdate);
 
+            // Throw an exception if update failed
             if (!result)
             {
-                throw new Exception();
+                throw new ExceptionHandler(Message.ErrorOnUpdatingData);
             }
 
-            var response = new ResponseOKHandler<string>(Message.DataUpdated);
+            // Return success response
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataUpdated);
 
             return Ok(response);
         }
         catch(ExceptionHandler ex)
         {
-            var response = new ResponseErrorHandler
+            ResponseErrorHandler response = new ResponseErrorHandler
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
@@ -141,7 +161,10 @@ public class EmployeeController : ControllerBase
     {
         try
         {
-            var entity = _repository.GetByGuid(guid);
+            // Check if data available
+            Employee? entity = _repository.GetByGuid(guid);
+
+            // Handling null data
             if (entity is null)
             {
                 return NotFound(new ResponseErrorHandler
@@ -152,20 +175,24 @@ public class EmployeeController : ControllerBase
                 });
             }
 
-            var result = _repository.Delete(entity);
+            // Delete data
+            bool result = _repository.Delete(entity);
 
+            // Throw an exception if update failed
             if (!result)
             {
-                throw new Exception();
+                throw new ExceptionHandler(Message.ErrorOnDeletingData);
             }
 
-            var response = new ResponseOKHandler<string>(Message.DataDeleted);
+            // Return success response
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
 
             return Ok(response);
         }
         catch(ExceptionHandler ex)
         {
-            var response = new ResponseErrorHandler
+
+            ResponseErrorHandler response = new ResponseErrorHandler
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),

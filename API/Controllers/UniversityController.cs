@@ -34,7 +34,7 @@ public class UniversityController : ControllerBase
         // Get data collection from repository
         IEnumerable<University> dataCollection = _repository.GetAll();
 
-        // Handling response for empty collection
+        // Handling null data
         if (!dataCollection.Any())
         {
             return NotFound(new ResponseErrorHandler
@@ -47,8 +47,8 @@ public class UniversityController : ControllerBase
         }
 
         // Return success response
-        var data = dataCollection.Select(item => (UniversityDTO)item);
-        var response = new ResponseOKHandler<IEnumerable<UniversityDTO>>(data);
+        IEnumerable<UniversityDTO> data = dataCollection.Select(item => (UniversityDTO)item);
+        ResponseOKHandler<IEnumerable<UniversityDTO>> response = new ResponseOKHandler<IEnumerable<UniversityDTO>>(data);
 
         return Ok(response);
     }
@@ -59,6 +59,7 @@ public class UniversityController : ControllerBase
         // Check if data available
         University? data = _repository.GetByGuid(guid);
 
+        // Handling request if data is not found
         if (data is null)
         {
             return NotFound(new ResponseErrorHandler
@@ -69,6 +70,7 @@ public class UniversityController : ControllerBase
             });
         }
 
+        // Return success response 
         UniversityDTO response = (UniversityDTO)data;
 
         return Ok(response);
@@ -107,10 +109,10 @@ public class UniversityController : ControllerBase
         try
         {
             // Check if data available
-            var entity = _repository.GetByGuid(universityDTO.Guid);
+            University? entity = _repository.GetByGuid(universityDTO.Guid);
 
-            // Handling request if data is not found
-            if(entity is null)
+            // Handling null data
+            if (entity is null)
             {
                 return NotFound(new ResponseErrorHandler
                 {
@@ -124,7 +126,7 @@ public class UniversityController : ControllerBase
             University toUpdate = universityDTO;
             toUpdate.CreatedDate = entity.CreatedDate;
 
-            var result = _repository.Update(toUpdate);
+            bool result = _repository.Update(toUpdate);
 
             // Throw an exception if update failed
             if (!result)
@@ -186,7 +188,6 @@ public class UniversityController : ControllerBase
         }
         catch(ExceptionHandler ex)
         {
-            // Return error response
             ResponseErrorHandler response = new ResponseErrorHandler
             {
                 Code = StatusCodes.Status500InternalServerError,
