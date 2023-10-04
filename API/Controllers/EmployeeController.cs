@@ -3,6 +3,10 @@ using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using API.DataTransferObjects;
 using API.DataTransferObjects.Creates;
+using API.Utilities.Handlers;
+using System.Net;
+using API.Repositories;
+using API.Utilities;
 
 namespace API.Controllers;
 
@@ -10,9 +14,9 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class EmployeeController : ControllerBase
 {
-    private readonly IGeneralRepository<Employee> _repository;
+    private readonly EmployeeRepository _repository;
 
-    public EmployeeController(IGeneralRepository<Employee> repository)
+    public EmployeeController(EmployeeRepository repository)
     {
         _repository = repository;
     }
@@ -24,12 +28,19 @@ public class EmployeeController : ControllerBase
 
         if (!result.Any())
         {
-            return NotFound("Data not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = Message.DataNotFound
+
+            });
         }
 
         var data = result.Select(item => (EmployeeDTO)item);
+        var response = new ResponseOKHandler<IEnumerable<EmployeeDTO>>(data);
 
-        return Ok(data);
+        return Ok(response);
     }
 
     [HttpGet("{guid}")]
@@ -39,65 +50,130 @@ public class EmployeeController : ControllerBase
 
         if (result is null)
         {
-            return NotFound("Id not found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = Message.DataNotFound
+            });
         }
 
-        return Ok((EmployeeDTO)result);
+        var response = (EmployeeDTO)result;
+
+        return Ok(response);
     }
 
     [HttpPost]
     public IActionResult Create(CreateEmployeeDTO employeeDTO)
     {
-        var result = _repository.Create(employeeDTO);
-
-        if (result is null)
+        try
         {
-            return BadRequest("Failed to create data");
-        }
+            Employee toCreate = employeeDTO;
+            toCreate.NIK = GenerateHandler.CreateNIK(_repository.GetLastNIK());
 
-        return Ok((EmployeeDTO)result);
+            var result = _repository.Create(toCreate);
+            var response = new ResponseOKHandler<EmployeeDTO>((EmployeeDTO)result);
+
+            return Ok(response);
+        }
+        catch(ExceptionHandler ex)
+        {
+            var response = new ResponseErrorHandler()
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = Message.FailedToCreateData,
+                Error = ex.Message
+            };
+
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
     }
 
     [HttpPut]
     public IActionResult Update(EmployeeDTO employeeDTO)
     {
-        var entity = _repository.GetByGuid(employeeDTO.Guid);
-
-        if (entity is null)
+        try
         {
-            return NotFound("Id not found");
+            var entity = _repository.GetByGuid(employeeDTO.Guid);
+
+            if(entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = Message.DataNotFound
+                });
+            }
+
+            Employee toUpdate = employeeDTO;
+            toUpdate.NIK = entity.NIK;
+            toUpdate.CreatedDate = entity.CreatedDate;
+
+            var result = _repository.Update(toUpdate);
+
+            if (!result)
+            {
+                throw new Exception();
+            }
+
+            var response = new ResponseOKHandler<string>(Message.DataUpdated);
+
+            return Ok(response);
         }
-
-        Employee toUpdate = employeeDTO;
-        toUpdate.CreatedDate = entity.CreatedDate;
-
-        var result = _repository.Update(toUpdate);
-
-        if (!result)
+        catch(ExceptionHandler ex)
         {
-            return BadRequest("Failed to update data");
-        }
+            var response = new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = Message.FailedToUpdateData,
+                Error = ex.Message
+            };
 
-        return Ok("Data updated");
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
     }
 
     [HttpDelete("{guid}")]
     public IActionResult Delete(Guid guid)
     {
-        var entity = _repository.GetByGuid(guid);
-
-        if (entity is null)
+        try
         {
-            return NotFound("Id not found");
+            var entity = _repository.GetByGuid(guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = Message.DataNotFound
+                });
+            }
+
+            var result = _repository.Delete(entity);
+
+            if (!result)
+            {
+                throw new Exception();
+            }
+
+            var response = new ResponseOKHandler<string>(Message.DataDeleted);
+
+            return Ok(response);
         }
-
-        var result = _repository.Delete(entity);
-
-        if (!result)
+        catch(ExceptionHandler ex)
         {
-            return BadRequest("Failed to delete data");
-        }
+            var response = new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = Message.FailedToDeleteData,
+                Error = ex.Message
+            };
 
-        return Ok("Data deleted");
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
     }
 }

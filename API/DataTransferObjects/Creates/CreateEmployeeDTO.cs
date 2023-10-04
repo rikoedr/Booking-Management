@@ -4,7 +4,6 @@ namespace API.DataTransferObjects.Creates;
 
 public class CreateEmployeeDTO
 {
-    public string NIK { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public DateTime BirthDate { get; set; }
@@ -19,7 +18,6 @@ public class CreateEmployeeDTO
             Guid = Guid.NewGuid(),
             CreatedDate = DateTime.Now,
             ModifiedDate = DateTime.Now,
-            NIK = employeeDTO.NIK,
             FirstName = employeeDTO.FirstName,
             LastName = employeeDTO.LastName,
             BirthDate = employeeDTO.BirthDate,

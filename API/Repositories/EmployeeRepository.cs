@@ -14,4 +14,18 @@ public class EmployeeRepository : AbstractRepository<Employee>, IGeneralReposito
     public EmployeeRepository(BookingManagementDbContext context) : base(context)
     {
     }
+
+    public string? GetLastNIK()
+    {
+        var employees = base.GetAll();
+
+        if(employees.Count() == 0)
+        {
+            return null;
+        }
+
+        int result = int.Parse(employees.Last().NIK);
+
+        return result.ToString();
+    }
 }
