@@ -1,6 +1,4 @@
 ﻿namespace API.Data;
-
-using API.Model;
 using API.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,7 +43,8 @@ public class BookingManagementDbContext : DbContext
         modelBuilder.Entity<Employee>()
             .HasOne(a => a.Account)
             .WithOne(e => e.Employee)
-            .HasForeignKey<Employee>(e => e.Guid);
+            .HasForeignKey<Account>(e => e.Guid)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Employee>()
             .HasMany(b => b.Bookings)

@@ -10,21 +10,24 @@ namespace API.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "tb_m_accounts",
+                name: "tb_m_employees",
                 columns: table => new
                 {
                     guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    is_deleted = table.Column<bool>(type: "bit", nullable: false),
-                    otp = table.Column<int>(type: "int", nullable: false),
-                    is_used = table.Column<bool>(type: "bit", nullable: false),
-                    expired_time = table.Column<DateTime>(type: "datetime", nullable: false),
+                    nik = table.Column<string>(type: "nchar(6)", nullable: false),
+                    first_name = table.Column<string>(type: "nvarchar(100)", nullable: false),
+                    last_name = table.Column<string>(type: "nvarchar(100)", nullable: false),
+                    birth_date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    gender = table.Column<int>(type: "int", nullable: false),
+                    hiring_date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    email = table.Column<string>(type: "nvarchar(100)", nullable: false),
+                    phone_number = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     created_date = table.Column<DateTime>(type: "datetime", nullable: false),
                     modified_date = table.Column<DateTime>(type: "datetime", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_tb_m_accounts", x => x.guid);
+                    table.PrimaryKey("PK_tb_m_employees", x => x.guid);
                 });
 
             migrationBuilder.CreateTable(
@@ -73,55 +76,56 @@ namespace API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "tb_m_employees",
+                name: "tb_m_accounts",
                 columns: table => new
                 {
                     guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    nik = table.Column<string>(type: "nchar(6)", nullable: false),
-                    first_name = table.Column<string>(type: "nvarchar(100)", nullable: false),
-                    last_name = table.Column<string>(type: "nvarchar(100)", nullable: false),
-                    birth_date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    gender = table.Column<int>(type: "int", nullable: false),
-                    hiring_date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    email = table.Column<string>(type: "nvarchar(100)", nullable: false),
-                    phone_number = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    password = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    is_deleted = table.Column<bool>(type: "bit", nullable: false),
+                    otp = table.Column<int>(type: "int", nullable: false),
+                    is_used = table.Column<bool>(type: "bit", nullable: false),
+                    expired_time = table.Column<DateTime>(type: "datetime", nullable: false),
                     created_date = table.Column<DateTime>(type: "datetime", nullable: false),
                     modified_date = table.Column<DateTime>(type: "datetime", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_tb_m_employees", x => x.guid);
+                    table.PrimaryKey("PK_tb_m_accounts", x => x.guid);
                     table.ForeignKey(
-                        name: "FK_tb_m_employees_tb_m_accounts_guid",
+                        name: "FK_tb_m_accounts_tb_m_employees_guid",
                         column: x => x.guid,
-                        principalTable: "tb_m_accounts",
+                        principalTable: "tb_m_employees",
                         principalColumn: "guid",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "tb_m_account_roles",
+                name: "tb_tr_bookings",
                 columns: table => new
                 {
                     guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    account_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    role_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    start_date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    end_date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    status = table.Column<int>(type: "int", nullable: false),
+                    remarks = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    room_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    employee_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     created_date = table.Column<DateTime>(type: "datetime", nullable: false),
                     modified_date = table.Column<DateTime>(type: "datetime", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_tb_m_account_roles", x => x.guid);
+                    table.PrimaryKey("PK_tb_tr_bookings", x => x.guid);
                     table.ForeignKey(
-                        name: "FK_tb_m_account_roles_tb_m_accounts_account_guid",
-                        column: x => x.account_guid,
-                        principalTable: "tb_m_accounts",
+                        name: "FK_tb_tr_bookings_tb_m_employees_employee_guid",
+                        column: x => x.employee_guid,
+                        principalTable: "tb_m_employees",
                         principalColumn: "guid",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_tb_m_account_roles_tb_m_roles_role_guid",
-                        column: x => x.role_guid,
-                        principalTable: "tb_m_roles",
+                        name: "FK_tb_tr_bookings_tb_m_rooms_room_guid",
+                        column: x => x.room_guid,
+                        principalTable: "tb_m_rooms",
                         principalColumn: "guid",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -156,32 +160,28 @@ namespace API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "tb_tr_bookings",
+                name: "tb_m_account_roles",
                 columns: table => new
                 {
                     guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    start_date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    end_date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    status = table.Column<int>(type: "int", nullable: false),
-                    remarks = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    room_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    employee_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    account_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    role_guid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     created_date = table.Column<DateTime>(type: "datetime", nullable: false),
                     modified_date = table.Column<DateTime>(type: "datetime", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_tb_tr_bookings", x => x.guid);
+                    table.PrimaryKey("PK_tb_m_account_roles", x => x.guid);
                     table.ForeignKey(
-                        name: "FK_tb_tr_bookings_tb_m_employees_employee_guid",
-                        column: x => x.employee_guid,
-                        principalTable: "tb_m_employees",
+                        name: "FK_tb_m_account_roles_tb_m_accounts_account_guid",
+                        column: x => x.account_guid,
+                        principalTable: "tb_m_accounts",
                         principalColumn: "guid",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_tb_tr_bookings_tb_m_rooms_room_guid",
-                        column: x => x.room_guid,
-                        principalTable: "tb_m_rooms",
+                        name: "FK_tb_m_account_roles_tb_m_roles_role_guid",
+                        column: x => x.role_guid,
+                        principalTable: "tb_m_roles",
                         principalColumn: "guid",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -230,19 +230,19 @@ namespace API.Migrations
                 name: "tb_tr_bookings");
 
             migrationBuilder.DropTable(
+                name: "tb_m_accounts");
+
+            migrationBuilder.DropTable(
                 name: "tb_m_roles");
 
             migrationBuilder.DropTable(
                 name: "tb_m_universities");
 
             migrationBuilder.DropTable(
-                name: "tb_m_employees");
-
-            migrationBuilder.DropTable(
                 name: "tb_m_rooms");
 
             migrationBuilder.DropTable(
-                name: "tb_m_accounts");
+                name: "tb_m_employees");
         }
     }
 }
