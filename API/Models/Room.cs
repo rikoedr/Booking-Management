@@ -1,7 +1,7 @@
 ﻿using API.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace API.Model;
+namespace API.Models;
 
 /*
  * Room Class merupakan model untuk mendifinisikan Room Object serta pengaturan anotasi ORM 
