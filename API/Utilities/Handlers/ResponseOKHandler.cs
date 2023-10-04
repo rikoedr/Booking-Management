@@ -2,6 +2,11 @@
 
 namespace API.Utilities.Handlers;
 
+/*
+ * Response OK Handler adalah class yang berisi format pengaturan response API khusus
+ * response berkategori Sukses.
+ */
+
 public class ResponseOKHandler<TEntity>
 {
     public int Code { get; set; }
@@ -9,6 +14,7 @@ public class ResponseOKHandler<TEntity>
     public string Message { get; set; }
     public TEntity? Data { get; set; }
 
+    // Format response sukses beserta data
     public ResponseOKHandler(TEntity? data)
     {
         Code = StatusCodes.Status200OK;
@@ -17,6 +23,7 @@ public class ResponseOKHandler<TEntity>
         Data = data;
     }
 
+    // Format response sukses tanpa data
     public ResponseOKHandler(string message)
     {
         Code = StatusCodes.Status200OK;

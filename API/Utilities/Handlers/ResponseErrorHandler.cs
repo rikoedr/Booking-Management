@@ -1,5 +1,9 @@
 ﻿namespace API.Utilities.Handlers;
 
+/*
+ * Response Erro handler adalah class yang berfungsi sebagai format response API
+ * berkategori Error atau gagal.
+ */
 public class ResponseErrorHandler
 {
     public int Code { get; set; }

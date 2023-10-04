@@ -1,5 +1,11 @@
 ﻿namespace API.Utilities.Handlers;
 
+
+/*
+ * Hashing Handler adalah class yang berfungsi untuk melakukan Hashing
+ * terhadap password yang diterima.
+ */
+
 public class HashingHandler
 {
     private static string GetRandomSalt()

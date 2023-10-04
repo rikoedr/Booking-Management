@@ -1,5 +1,9 @@
 ﻿namespace API.Utilities;
 
+/*
+ * Message Class adalah kumpulan static string untuk message response API.
+ */
+
 public class Message
 {
     // Ok Message
@@ -15,4 +19,5 @@ public class Message
     // Error Message
     public static readonly string ErrorOnUpdatingData = "Error on Updating Data!";
     public static readonly string ErrorOnDeletingData = "Error on Deleting Data!";
+  
 }
