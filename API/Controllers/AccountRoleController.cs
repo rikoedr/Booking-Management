@@ -3,17 +3,27 @@ using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using API.DataTransferObjects;
 using API.DataTransferObjects.Creates;
+using API.Utilities.Handlers;
+using API.Utilities;
+using System.Net;
+using API.Repositories;
 
 namespace API.Controllers;
 
+/*
+ * AccountRole Controller adalah class untuk yang mengatur penerimaan request dan pengembalian response API.
+ * Class ini terhubung dengan class AccountRole Repository yang berfungsi untuk melakukan ORM.
+ * Success dan Error Response di dalam controller ini di handle oleh ControllerBase dan Utility Class
+ * terkait format Response API.
+ */
 
 [ApiController]
 [Route("api/[controller]")]
 public class AccountRoleController : ControllerBase
 {
-    private readonly IGeneralRepository<AccountRole> _repository;
+    private readonly AccountRoleRepository _repository;
 
-    public AccountRoleController(IGeneralRepository<AccountRole> repository)
+    public AccountRoleController(AccountRoleRepository repository)
     {
         _repository = repository;
     }
@@ -21,84 +31,172 @@ public class AccountRoleController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        var result = _repository.GetAll();
+        // Get data collection from repository
+        IEnumerable<AccountRole> dataCollection = _repository.GetAll();
 
-        if (!result.Any())
+        // Handling null data
+        if (!dataCollection.Any())
         {
-            return NotFound("Data not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = Message.DataNotFound
+
+            });
         }
 
-        var data = result.Select(item => (AccountRoleDTO)item);
+        // Return success response
+        IEnumerable<AccountRoleDTO> data = dataCollection.Select(item => (AccountRoleDTO)item);
+        ResponseOKHandler<IEnumerable<AccountRoleDTO>> response = new ResponseOKHandler<IEnumerable<AccountRoleDTO>>(data);
 
-        return Ok(data);
+        return Ok(response);
     }
 
     [HttpGet("{guid}")]
     public IActionResult GetByGuid(Guid guid)
     {
-        var result = _repository.GetByGuid(guid);
+        // Check if data available
+        AccountRole? data = _repository.GetByGuid(guid);
 
-        if (result is null)
+        // Handling request if data is not found
+        if (data is null)
         {
-            return NotFound("Id not found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = Message.DataNotFound
+            });
         }
 
-        return Ok((AccountRoleDTO)result);
+        // Return success response 
+        AccountRoleDTO response = (AccountRoleDTO)data;
+
+        return Ok(response); ;
     }
 
     [HttpPost]
     public IActionResult Create(CreateAccountRoleDTO accountRoleDTO)
     {
-        var result = _repository.Create(accountRoleDTO);
-
-        if (result is null)
+        try
         {
-            return BadRequest("Failed to create data");
-        }
+            // Create data from request paylod
+            AccountRole? result = _repository.Create(accountRoleDTO);
 
-        return Ok((AccountRoleDTO)result);
+            // Return success response
+            ResponseOKHandler<AccountRoleDTO> response = new ResponseOKHandler<AccountRoleDTO>((AccountRoleDTO)result);
+
+            return Ok(response);
+        }
+        catch (ExceptionHandler ex)
+        {
+            ResponseErrorHandler response = new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = Message.FailedToCreateData,
+                Error = ex.Message
+            };
+
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
     }
 
     [HttpPut]
     public IActionResult Update(AccountRoleDTO accountRoleDTO)
     {
-        var entity = _repository.GetByGuid(accountRoleDTO.Guid);
-
-        if (entity is null)
+        try
         {
-            return NotFound("Id not found");
+            // Check if data available
+            AccountRole? entity = _repository.GetByGuid(accountRoleDTO.Guid);
+
+            // Handling null data
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = Message.DataNotFound
+                });
+            }
+
+            // Update data
+            AccountRole toUpdate = accountRoleDTO;
+            toUpdate.CreatedDate = entity.CreatedDate;
+
+            bool result = _repository.Update(toUpdate);
+
+            // Throw an exception if update failed
+            if (!result)
+            {
+                throw new ExceptionHandler(Message.ErrorOnUpdatingData);
+            }
+
+            // Return success response
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataUpdated);
+
+            return Ok(response);
         }
-
-        AccountRole toUpdate = accountRoleDTO;
-        toUpdate.CreatedDate = entity.CreatedDate;
-
-        var result = _repository.Update(toUpdate);
-
-        if (!result)
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to update data");
-        }
+            ResponseErrorHandler response = new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = Message.FailedToCreateData,
+                Error = ex.Message
+            };
 
-        return Ok("Data updated");
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
     }
 
     [HttpDelete("{guid}")]
     public IActionResult Delete(Guid guid)
     {
-        var entity = _repository.GetByGuid(guid);
-
-        if (entity is null)
+        try
         {
-            return NotFound("Id not found");
+            // Check if data available
+            AccountRole? data = _repository.GetByGuid(guid);
+
+            // Handling null data
+            if (data is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = Message.DataNotFound
+                });
+            }
+
+            // Delete data
+            bool result = _repository.Delete(data);
+
+            // Throw an exception if update failed
+            if (!result)
+            {
+                throw new ExceptionHandler(Message.ErrorOnDeletingData);
+            }
+
+            // Return success response
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
+
+            return Ok(response);
         }
-
-        var result = _repository.Delete(entity);
-
-        if (!result)
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to delete data");
-        }
+            ResponseErrorHandler response = new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = Message.FailedToCreateData,
+                Error = ex.Message
+            };
 
-        return Ok("Data deleted");
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
     }
 }
