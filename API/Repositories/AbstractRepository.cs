@@ -12,7 +12,7 @@ namespace API.Repositories;
 public abstract class AbstractRepository<TEntity> : IGeneralRepository<TEntity>
     where TEntity : class
 {
-    private readonly BookingManagementDbContext _context;
+    protected readonly BookingManagementDbContext _context;
 
     protected AbstractRepository(BookingManagementDbContext context)
     {

@@ -18,4 +18,9 @@ public class GenerateHandler
 
         return result.ToString();
     }
+
+    public static int CreateOTP()
+    {
+        return new Random().Next(100000, 1000000); 
+    }
 }

@@ -1,6 +1,6 @@
 ﻿using API.Models;
 
-namespace API.DataTransferObjects.Creates;
+namespace API.DataTransferObjects.Accounts;
 
 public class CreateAccountDTO
 {

@@ -28,4 +28,21 @@ public class EmployeeRepository : AbstractRepository<Employee>, IGeneralReposito
 
         return result.ToString();
     }
+
+    public Employee? GetByEmail(string email)
+    {
+        try
+        {
+            if (email is null)
+            {
+                return null;
+            }
+
+            return base._context.Set<Employee>().First(e => e.Email == email);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

@@ -14,4 +14,18 @@ public class UniversityRepository : AbstractRepository<University>, IGeneralRepo
     public UniversityRepository(BookingManagementDbContext context) : base(context)
     {
     }
+
+    public University? GetByCode(string code)
+    {
+        try
+        {
+            if (code == null) return null;
+
+            return base._context.Set<University>().First(u => u.Code == code);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

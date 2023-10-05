@@ -9,10 +9,13 @@ public class CreateEmployeeValidator : AbstractValidator<CreateEmployeeDTO>
     {
         RuleFor(e => e.FirstName)
             .NotEmpty().WithMessage(Message.CanNotBeEmpty);
+
         RuleFor(e => e.BirthDate)
             .NotEmpty().WithMessage(Message.CanNotBeEmpty);
+
         RuleFor(e => e.Gender)
-            .NotEmpty().WithMessage(Message.CanNotBeEmpty);
+            .LessThanOrEqualTo(3);
+
         RuleFor(e => e.HiringDate)
             .NotEmpty().WithMessage(Message.CanNotBeEmpty);
 
@@ -23,6 +26,6 @@ public class CreateEmployeeValidator : AbstractValidator<CreateEmployeeDTO>
         RuleFor(e => e.PhoneNumber)
             .NotEmpty()
             .MinimumLength(10)
-            .MaximumLength(10);
+            .MaximumLength(20);
     }
 }
