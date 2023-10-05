@@ -38,6 +38,14 @@ builder.Services.AddControllers()
         };
     });
 
+// Add SMTP Services
+builder.Services.AddTransient<IEmailHandler, EmailHandler>(_ => new EmailHandler(
+    builder.Configuration["SmtpService:Server"],
+    int.Parse(builder.Configuration["SmtpService:Port"]),
+    builder.Configuration["SmtpService:FromEmailAddress"]
+));
+
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

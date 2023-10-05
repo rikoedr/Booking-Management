@@ -24,12 +24,15 @@ public class AccountController : ControllerBase
     private readonly AccountRepository _accountRepository;
     private readonly EmployeeRepository _employeeRepository;
     private readonly UniversityRepository _universityRepository;
+    private readonly IEmailHandler _emailHandler;
 
-    public AccountController(AccountRepository accountRepository, EmployeeRepository employeeRepository, UniversityRepository universityRepository)
+    public AccountController(AccountRepository accountRepository, EmployeeRepository employeeRepository,
+        UniversityRepository universityRepository, IEmailHandler emailHandler)
     {
         _accountRepository = accountRepository;
         _employeeRepository = employeeRepository;
         _universityRepository = universityRepository;
+        _emailHandler = emailHandler;
     }
 
     [HttpGet]
@@ -46,7 +49,6 @@ public class AccountController : ControllerBase
                 Code = StatusCodes.Status404NotFound,
                 Status = HttpStatusCode.NotFound.ToString(),
                 Message = Message.DataNotFound
-
             });
         }
 
@@ -215,7 +217,7 @@ public class AccountController : ControllerBase
     [Route("forgot-password")]
     public IActionResult ForgotPassword(AccountEmailRequestDTO accountEmailRequestDTO)
     {
-       try
+        try
         {
             // Cek apakah email terdaftar dalam database
             Employee? employeeData = _employeeRepository.GetByEmail(accountEmailRequestDTO.Email);
@@ -245,12 +247,13 @@ public class AccountController : ControllerBase
                 throw new ExceptionHandler("Failed to Update OTP");
             }
 
-            // Return reponse berhasil
-            ResponseOKHandler<AccountOTPResponseDTO> response = new ResponseOKHandler<AccountOTPResponseDTO>((AccountOTPResponseDTO)accountData);
+            // Kirim kode OTP ke Email dan kirim return berhasil
+            string otpMessage = $"Your OTP Code : {accountData.OTP}, Valid Until : {accountData.ExpiredTime}";
+            _emailHandler.Send("RESET PASSWORD", otpMessage, accountEmailRequestDTO.Email);
 
-            return Ok(response);
+            return Ok(new ResponseOKHandler<string>(Message.OTPCodeHasSent));
         }
-        catch(ExceptionHandler ex)
+        catch (ExceptionHandler ex)
         {
             ResponseErrorHandler response = new ResponseErrorHandler
             {
@@ -292,9 +295,10 @@ public class AccountController : ControllerBase
             Account? accountData = _accountRepository.GetByGuid(employeeData.Guid);
 
             // Validasi kesamaan kode OTP dalam request dengan di database
-            if(changeAccountPasswordDTO.OTP != accountData.OTP)
+            if (changeAccountPasswordDTO.OTP != accountData.OTP)
             {
-                return Unauthorized(new ResponseErrorHandler {
+                return Unauthorized(new ResponseErrorHandler
+                {
                     Code = StatusCodes.Status401Unauthorized,
                     Status = HttpStatusCode.Unauthorized.ToString(),
                     Message = Message.InvalidOTPCode
@@ -304,7 +308,8 @@ public class AccountController : ControllerBase
             // Validasi apakah kode OTP sudah pernah digunakan atau tidak
             if (accountData.IsUsed)
             {
-                return StatusCode(StatusCodes.Status410Gone, new ResponseErrorHandler {
+                return StatusCode(StatusCodes.Status410Gone, new ResponseErrorHandler
+                {
                     Code = StatusCodes.Status410Gone,
                     Status = HttpStatusCode.Gone.ToString(),
                     Message = Message.OTPCodeAlreadyUsed
@@ -312,7 +317,7 @@ public class AccountController : ControllerBase
             }
 
             // Validasi apakah kode OTP sudah kadaluarsa
-            if(accountData.ExpiredTime <= DateTime.Now)
+            if (accountData.ExpiredTime <= DateTime.Now)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new ResponseErrorHandler
                 {
@@ -337,9 +342,8 @@ public class AccountController : ControllerBase
 
             // Return Ok jika seluruh proses berhasil
             return Ok(new ResponseOKHandler<string>("Password changed"));
-            
         }
-        catch(ExceptionHandler ex)
+        catch (ExceptionHandler ex)
         {
             ResponseErrorHandler response = new ResponseErrorHandler
             {
@@ -351,7 +355,6 @@ public class AccountController : ControllerBase
 
             return StatusCode(StatusCodes.Status500InternalServerError, response);
         }
-
     }
 
     /*
@@ -393,7 +396,8 @@ public class AccountController : ControllerBase
             // Response error karena password tidak sesuai 
             if (!isVerified)
             {
-                return Unauthorized(errorResponse); ;
+                return Unauthorized(errorResponse);
+                ;
             }
 
             // Response berhasil setelah seluruh proses validasi sukses
@@ -413,7 +417,7 @@ public class AccountController : ControllerBase
         }
     }
 
-    
+
     [HttpPost]
     [Route("Registration")]
     public IActionResult Registration(AccountRegistrationRequestDTO accountRegistration)
@@ -423,8 +427,8 @@ public class AccountController : ControllerBase
             // Check if email has registered
             Employee? employee = _employeeRepository.GetByEmail(accountRegistration.Email);
 
-            if(employee is not null)
-            { 
+            if (employee is not null)
+            {
                 return Conflict(new ResponseErrorHandler
                 {
                     Code = StatusCodes.Status409Conflict,
@@ -435,8 +439,8 @@ public class AccountController : ControllerBase
 
             // Check university data
             University? university = _universityRepository.GetByCode(accountRegistration.UniversityCode);
-           
-            if(university is null)
+
+            if (university is null)
             {
                 _universityRepository.Create(new University
                 {
@@ -458,7 +462,7 @@ public class AccountController : ControllerBase
             newEmployee.NIK = GenerateHandler.CreateNIK(_employeeRepository.GetLastNIK());
 
             Employee? createEmployee = _employeeRepository.Create(newEmployee);
-            if(createEmployee is null) throw new ExceptionHandler(Message.FailedToCreateData);
+            if (createEmployee is null) throw new ExceptionHandler(Message.FailedToCreateData);
 
             // Create account data
             Account? createAccount = _accountRepository.Create(new Account
@@ -473,14 +477,14 @@ public class AccountController : ControllerBase
                 ExpiredTime = DateTime.Now
             });
 
-            if(createAccount is null) throw new ExceptionHandler(Message.FailedToCreateData);
+            if (createAccount is null) throw new ExceptionHandler(Message.FailedToCreateData);
 
             // Return response
             ResponseOKHandler<EmployeeDTO> response = new ResponseOKHandler<EmployeeDTO>((EmployeeDTO)createEmployee);
 
             return Ok(response);
         }
-        catch(ExceptionHandler ex)
+        catch (ExceptionHandler ex)
         {
             ResponseErrorHandler response = new ResponseErrorHandler
             {

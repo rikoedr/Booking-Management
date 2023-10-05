@@ -10,11 +10,13 @@ public class AccountRegistrationRequestValidator : AbstractValidator<AccountRegi
         RuleFor(a => a.FirstName)
             .NotEmpty().WithMessage(Message.FirstNameEmpty);
 
-        RuleFor(a => a.BirthDate)
-            .NotEmpty().WithMessage(Message.BirthDateEmpty);
+        RuleFor(a => a.LastName);
 
-        RuleFor(a => a.Gender)
-            .NotEmpty().WithMessage(Message.GenderEmpty);
+        RuleFor(a => a.BirthDate)
+            .NotEmpty().WithMessage(Message.BirthDateEmpty)
+            .LessThan(DateTime.Now).WithMessage(Message.BirthDateLessThanNow);
+
+        RuleFor(a => a.Gender);
 
         RuleFor(a => a.HiringDate)
             .NotEmpty().WithMessage(Message.HiringDateEmpty);
@@ -32,8 +34,7 @@ public class AccountRegistrationRequestValidator : AbstractValidator<AccountRegi
         RuleFor(a => a.Degree)
             .NotEmpty().WithMessage(Message.DegreeEmpty);
 
-        RuleFor(a => a.GPA)
-            .NotEmpty().WithMessage(Message.GPAEmpty);
+        RuleFor(a => a.GPA);
 
         RuleFor(a => a.UniversityCode)
             .NotEmpty().WithMessage(Message.UniversityCodeEmpty);
@@ -42,7 +43,8 @@ public class AccountRegistrationRequestValidator : AbstractValidator<AccountRegi
             .NotEmpty().WithMessage(Message.UniversityNameEmpty);
 
         RuleFor(a => a.Password)
-            .NotEmpty().WithMessage(Message.EmptyPassword);
+            .NotEmpty().WithMessage(Message.EmptyPassword)
+            .MinimumLength(6).WithMessage(Message.PasswordMinimumCharacter);
 
         RuleFor(a => a.ConfirmPassword)
             .NotEmpty().WithMessage(Message.EmptyPassword)

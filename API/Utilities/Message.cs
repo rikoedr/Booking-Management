@@ -42,19 +42,23 @@ public class Message
     public static readonly string InvalidOTPCode = "Invalid OTP Code";
     public static readonly string OTPCodeAlreadyUsed = "OTP Code has already been used";
     public static readonly string OTPCodeHasExpired = "OTP Code has expired";
+    public static readonly string OTPCodeHasSent = "OTP code has sent to your email";
 
     // Email Messages
     public static readonly string EmptyEmail = "Email : This field can not be empty";
-    public static readonly string InvalidEmailFormat = "Invalid Email Format";
+    public static readonly string InvalidEmailFormat = "Invalid email format";
     public static readonly string EmailAlreadyRegistered = "Email already registered";
 
     // Password Messages
     public static readonly string EmptyPassword = "Password : This field can not be empty";
-    public static readonly string PasswordDoNotMatch = "New Password & Confirmation Password Do Not Match";
+    public static readonly string PasswordDoNotMatch = "New password and confirmation do not match";
+    public static readonly string PasswordMinimumCharacter = "Password must have at least 6 characters";
+
 
     // Date Messages
     public static readonly string BirthDateEmpty = "Birth Date : This field can not be empty";
     public static readonly string HiringDateEmpty = "Hiring Date : This field can not be empty";
+    public static readonly string BirthDateLessThanNow = "Birth Date must less than present time";
 
     // Bio Messages
     public static readonly string FirstNameEmpty = "First Name : This field can not be empty";
