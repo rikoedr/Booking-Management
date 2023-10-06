@@ -21,6 +21,7 @@ builder.Services.AddScoped<AccountRoleRepository, AccountRoleRepository>();
 builder.Services.AddScoped<BookingRepository, BookingRepository>();
 builder.Services.AddScoped<EducationRepository, EducationRepository>();
 builder.Services.AddScoped<EmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<EmployeeAccountRepository, EmployeeAccountRepository>();
 builder.Services.AddScoped<RoleRepository, RoleRepository>();
 builder.Services.AddScoped<RoomRepository, RoomRepository>();
 builder.Services.AddScoped<UniversityRepository, UniversityRepository>();

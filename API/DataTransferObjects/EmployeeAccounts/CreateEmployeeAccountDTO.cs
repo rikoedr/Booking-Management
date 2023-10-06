@@ -2,9 +2,9 @@
 using API.Models;
 using API.Utilities.Handlers;
 
-namespace API.DataTransferObjects.Accounts;
+namespace API.DataTransferObjects.EmployeeAccounts;
 
-public class AccountRegistrationRequestDTO
+public class CreateEmployeeAccountDTO
 {
     public string FirstName { get; set; }
     public string LastName { get; set; }
@@ -21,9 +21,9 @@ public class AccountRegistrationRequestDTO
     public string Password { get; set; }
     public string ConfirmPassword { get; set; }
 
-    public static implicit operator Employee(AccountRegistrationRequestDTO request)
+    public static implicit operator EmployeeAccount(CreateEmployeeAccountDTO request)
     {
-        return new Employee
+        return new EmployeeAccount
         {
             Guid = Guid.NewGuid(),
             CreatedDate = DateTime.Now,
@@ -34,16 +34,7 @@ public class AccountRegistrationRequestDTO
             Gender = request.Gender,
             HiringDate = request.HiringDate,
             Email = request.Email,
-            PhoneNumber = request.PhoneNumber
-        };
-    }
-
-    public static implicit operator Account(AccountRegistrationRequestDTO request)
-    {
-        return new Account
-        {
-            CreatedDate = DateTime.Now,
-            ModifiedDate = DateTime.Now,
+            PhoneNumber = request.PhoneNumber,
             Password = request.Password,
             IsDeleted = false,
             IsUsed = true,
@@ -51,5 +42,4 @@ public class AccountRegistrationRequestDTO
             OTP = 0
         };
     }
-    
 }

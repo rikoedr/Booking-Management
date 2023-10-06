@@ -7,6 +7,7 @@ using API.Utilities;
 using System.Net;
 using API.Repositories;
 using API.DataTransferObjects.Accounts;
+using API.DataTransferObjects.EmployeeAccounts;
 
 namespace API.Controllers;
 
@@ -25,14 +26,16 @@ public class AccountController : ControllerBase
     private readonly EmployeeRepository _employeeRepository;
     private readonly UniversityRepository _universityRepository;
     private readonly IEmailHandler _emailHandler;
+    private readonly EmployeeAccountRepository _employeeAccountRepository;
 
     public AccountController(AccountRepository accountRepository, EmployeeRepository employeeRepository,
-        UniversityRepository universityRepository, IEmailHandler emailHandler)
+        UniversityRepository universityRepository, IEmailHandler emailHandler, EmployeeAccountRepository employeeAccountRepository)
     {
         _accountRepository = accountRepository;
         _employeeRepository = employeeRepository;
         _universityRepository = universityRepository;
         _emailHandler = emailHandler;
+        _employeeAccountRepository = employeeAccountRepository;
     }
 
     [HttpGet]
@@ -417,16 +420,24 @@ public class AccountController : ControllerBase
         }
     }
 
+    /*
+     * Registration adalah endpoint yang digunakan untuk menerima request pendaftaran,
+     * endpoint ini akan menerima format DTO yang merupakan gabungan dari data-data
+     * Employee dan Account.
+     * Registration menggunakan repository EmployeeAccount yang merupakan repository
+     * khusus untuk menangani transaksi bersama antara entity Employee dan entity Account.
+     */
 
     [HttpPost]
-    [Route("Registration")]
-    public IActionResult Registration(AccountRegistrationRequestDTO accountRegistration)
+    [Route("registration")]
+    public IActionResult Registration(CreateEmployeeAccountDTO accountRegistration)
     {
         try
         {
-            // Check if email has registered
+            // Validasi email yang dikirim apakah terdaftar atau tidak
             Employee? employee = _employeeRepository.GetByEmail(accountRegistration.Email);
 
+            // Kirim response conflict jika email sudah terdaftar
             if (employee is not null)
             {
                 return Conflict(new ResponseErrorHandler
@@ -437,11 +448,13 @@ public class AccountController : ControllerBase
                 });
             }
 
-            // Check university data
+            // Validasi data university yang dikirim apakah terdaftar ataut tidak
             University? university = _universityRepository.GetByCode(accountRegistration.UniversityCode);
 
+            // Handling ketersediaan data university
             if (university is null)
             {
+                // Buat baru data university jika belum terdaftar
                 _universityRepository.Create(new University
                 {
                     Guid = Guid.NewGuid(),
@@ -453,34 +466,24 @@ public class AccountController : ControllerBase
             }
             else
             {
+                // Gunakan data yang sudah terdaftar 
                 accountRegistration.UniversityCode = university.Code;
                 accountRegistration.UniversityName = university.Name;
             }
 
-            // Create Employee Data
-            Employee newEmployee = accountRegistration;
-            newEmployee.NIK = GenerateHandler.CreateNIK(_employeeRepository.GetLastNIK());
+            // Memulai transaksi ORM
+            EmployeeAccount employeeAccount = accountRegistration;
+            employeeAccount.NIK = GenerateHandler.CreateNIK(_employeeRepository.GetLastNIK());
+            employeeAccount.Password = HashingHandler.HashPassword(employeeAccount.Password);
 
-            Employee? createEmployee = _employeeRepository.Create(newEmployee);
-            if (createEmployee is null) throw new ExceptionHandler(Message.FailedToCreateData);
+            // Memanggil Create dari Repository EmployeeAccount
+            EmployeeAccount? createEmployeeAccount = _employeeAccountRepository.Create(employeeAccount);
 
-            // Create account data
-            Account? createAccount = _accountRepository.Create(new Account
-            {
-                Guid = createEmployee.Guid,
-                CreatedDate = createEmployee.CreatedDate,
-                ModifiedDate = createEmployee.ModifiedDate,
-                Password = HashingHandler.HashPassword(accountRegistration.Password),
-                IsDeleted = false,
-                OTP = 0,
-                IsUsed = true,
-                ExpiredTime = DateTime.Now
-            });
-
-            if (createAccount is null) throw new ExceptionHandler(Message.FailedToCreateData);
+            if (createEmployeeAccount is null) throw new ExceptionHandler(Message.FailedToCreateData);
 
             // Return response
-            ResponseOKHandler<EmployeeDTO> response = new ResponseOKHandler<EmployeeDTO>((EmployeeDTO)createEmployee);
+            Debugger.Message("Cek di controlelr");
+            ResponseOKHandler<EmployeeAccountDTO> response = new ResponseOKHandler<EmployeeAccountDTO>((EmployeeAccountDTO)createEmployeeAccount);
 
             return Ok(response);
         }

@@ -1,9 +1,9 @@
-﻿using API.DataTransferObjects.Accounts;
+﻿using API.DataTransferObjects.EmployeeAccounts;
 using FluentValidation;
 
 namespace API.Utilities.Validations.AccountValidations;
 
-public class AccountRegistrationRequestValidator : AbstractValidator<AccountRegistrationRequestDTO>
+public class AccountRegistrationRequestValidator : AbstractValidator<CreateEmployeeAccountDTO>
 {
     public AccountRegistrationRequestValidator()
     {

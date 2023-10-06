@@ -14,4 +14,6 @@ public class AccountRepository : AbstractRepository<Account>, IGeneralRepository
     public AccountRepository(BookingManagementDbContext context) : base(context)
     {
     }
+
+
 }
