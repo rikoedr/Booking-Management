@@ -7,6 +7,7 @@ using API.Repositories;
 using API.Utilities.Handlers;
 using API.Utilities;
 using System.Net;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers;
 
@@ -17,6 +18,7 @@ namespace API.Controllers;
  * terkait format Response API.
  */
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class EducationController : ControllerBase

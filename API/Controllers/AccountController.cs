@@ -8,6 +8,8 @@ using System.Net;
 using API.Repositories;
 using API.DataTransferObjects.Accounts;
 using API.DataTransferObjects.EmployeeAccounts;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers;
 
@@ -18,6 +20,7 @@ namespace API.Controllers;
  * terkait format Response API.
  */
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class AccountController : ControllerBase
@@ -27,15 +30,18 @@ public class AccountController : ControllerBase
     private readonly UniversityRepository _universityRepository;
     private readonly IEmailHandler _emailHandler;
     private readonly EmployeeAccountRepository _employeeAccountRepository;
+    private readonly ITokenHandler _tokenHandler;
 
     public AccountController(AccountRepository accountRepository, EmployeeRepository employeeRepository,
-        UniversityRepository universityRepository, IEmailHandler emailHandler, EmployeeAccountRepository employeeAccountRepository)
+        UniversityRepository universityRepository, IEmailHandler emailHandler, EmployeeAccountRepository employeeAccountRepository,
+        ITokenHandler tokenHandler)
     {
         _accountRepository = accountRepository;
         _employeeRepository = employeeRepository;
         _universityRepository = universityRepository;
         _emailHandler = emailHandler;
         _employeeAccountRepository = employeeAccountRepository;
+        _tokenHandler = tokenHandler;
     }
 
     [HttpGet]
@@ -216,6 +222,7 @@ public class AccountController : ControllerBase
      * dimanfaatkan ketika mengganti password.
      */
 
+    [AllowAnonymous]
     [HttpPost]
     [Route("forgot-password")]
     public IActionResult ForgotPassword(AccountEmailRequestDTO accountEmailRequestDTO)
@@ -367,6 +374,7 @@ public class AccountController : ControllerBase
      * class ini juga diterapkan validasi input.
      */
 
+    [AllowAnonymous]
     [HttpPost]
     [Route("login")]
     public IActionResult Login(AccountLoginRequestDTO accountLoginDTO)
@@ -403,8 +411,17 @@ public class AccountController : ControllerBase
                 ;
             }
 
+            // Buat JWT Token
+            List<Claim> claims = new List<Claim>();
+            claims.Add(new Claim("Email", employee.Email));
+            claims.Add(new Claim("FullName", string.Concat(employee.FirstName," ", employee.LastName)));
+
+            string generateToken = _tokenHandler.Generate(claims);
+
             // Response berhasil setelah seluruh proses validasi sukses
-            return Ok(new ResponseOKHandler<string>("Login success"));
+            ResponseOKHandler<object> response = new ResponseOKHandler<object>("Login success", new { Token = generateToken });
+            
+            return Ok(response);
         }
         catch (ExceptionHandler ex)
         {
@@ -428,6 +445,7 @@ public class AccountController : ControllerBase
      * khusus untuk menangani transaksi bersama antara entity Employee dan entity Account.
      */
 
+    [AllowAnonymous]
     [HttpPost]
     [Route("registration")]
     public IActionResult Registration(CreateEmployeeAccountDTO accountRegistration)

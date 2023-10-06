@@ -30,4 +30,14 @@ public class ResponseOKHandler<TEntity>
         Status = HttpStatusCode.OK.ToString();
         Message = message;
     }
+
+    // Format response sukses dengan custom message dan data
+    public ResponseOKHandler(string message, TEntity? data)
+    {
+        Code = StatusCodes.Status200OK;
+        Status = HttpStatusCode.OK.ToString();
+        Message = message;
+        Data = data;
+    }
+
 }
