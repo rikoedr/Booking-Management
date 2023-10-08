@@ -4,199 +4,284 @@ using Microsoft.AspNetCore.Mvc;
 using API.DataTransferObjects;
 using API.DataTransferObjects.Creates;
 using API.Utilities.Handlers;
-using API.Utilities;
 using System.Net;
 using API.Repositories;
+using API.Utilities.Responses;
+using Microsoft.AspNetCore.Server.IIS.Core;
+using API.DataTransferObjects.Bookings;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers;
 
-/*
- * Booking Controller adalah class untuk yang mengatur penerimaan request dan pengembalian response API.
- * Class ini terhubung dengan class Booking Repository yang berfungsi untuk melakukan ORM.
- * Success dan Error Response di dalam controller ini di handle oleh ControllerBase dan Utility Class
- * terkait format Response API.
- */
+// BOOKING CONTROLLER IS A CLASS FOR SETTING UP BOOKING ENDPOINT.g
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/booking")]
 public class BookingController : ControllerBase
 {
-    private readonly BookingRepository _repository;
+    private readonly BookingRepository _bookingRepository;
+    private readonly EmployeeRepository _employeeRepository;
+    private readonly RoomRepository _roomRepository;
 
-    public BookingController(BookingRepository repository)
+    public BookingController(BookingRepository bookingRepository, EmployeeRepository employeeRepository, RoomRepository roomRepository)
     {
-        _repository = repository;
+        _bookingRepository = bookingRepository;
+        _employeeRepository = employeeRepository;
+        _roomRepository = roomRepository;
     }
 
-    [HttpGet]
+    // Endpoint for getting all booking data
+    [HttpGet, Authorize(Roles = "admin")]
     public IActionResult GetAll()
     {
-        // Get data collection from repository
-        IEnumerable<Booking> dataCollection = _repository.GetAll();
+        // Get bookings data from repository
+        var bookings = _bookingRepository.GetAll();
 
-        // Handling null data
-        if (!dataCollection.Any())
+        // Handling empty bookings
+        if (!bookings.Any())
         {
-            return NotFound(new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status404NotFound,
-                Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
-
-            });
+            return NotFound(ErrorResponses.DataNotFound());
         }
 
         // Return success response
-        IEnumerable<BookingDTO> data = dataCollection.Select(item => (BookingDTO)item);
-        ResponseOKHandler<IEnumerable<BookingDTO>> response = new ResponseOKHandler<IEnumerable<BookingDTO>>(data);
+        var bookingsDto = bookings.Select(item => (BookingDTO)item);
 
-        return Ok(response);
+        return Ok(OkResponses.Success(bookingsDto));
     }
 
-    [HttpGet("{guid}")]
+    // Endpoint for getting booking data by guid
+    [HttpGet("{guid}"), Authorize(Roles = "admin")]
     public IActionResult GetByGuid(Guid guid)
     {
-        // Check if data available
-        Booking? data = _repository.GetByGuid(guid);
+        // Check booking data availability by guid
+        Booking? booking = _bookingRepository.GetByGuid(guid);
 
-        // Handling request if data is not found
-        if (data is null)
+        // Handling null booking data
+        if (booking is null)
         {
-            return NotFound(new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status404NotFound,
-                Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
-            });
+            return NotFound(ErrorResponses.DataNotFound());
         }
 
-        // Return success response 
-        BookingDTO response = (BookingDTO)data;
-
-        return Ok(response);
+        // Return success response
+        return Ok(OkResponses.Success((BookingDTO)booking));
     }
 
-    [HttpPost]
-    public IActionResult Create(CreateBookingDTO bookingDTO)
+    // Endpoint for creating booking data
+    [HttpPost, Authorize(Roles = "user")]
+    public IActionResult Create(CreateBookingDTO request)
     {
         try
         {
-            // Create data from request paylod
-            Booking? result = _repository.Create(bookingDTO);
+            // Check employee and room data availability
+            bool isEmployeeExist = _employeeRepository.IsAvailable(request.EmployeeGuid);
+            bool isRoomExist = _roomRepository.IsAvailable(request.RoomGuid);
+
+            // Handling employee or data not found
+            if (!isEmployeeExist || !isEmployeeExist)
+            {
+                return NotFound(ErrorResponses.DataNotFound("Booking or employee data is not found"));
+            }
+
+            // Create booking data
+            Booking? newBooking = _bookingRepository.Create(request);
+
+            if(newBooking is null)
+            {
+                throw new ExceptionHandler(Messages.FailedToCreateBookingData);
+            }
 
             // Return success response
-            ResponseOKHandler<BookingDTO> response = new ResponseOKHandler<BookingDTO>((BookingDTO)result);
-
-            return Ok(response);
+            return Ok(OkResponses.Success((BookingDTO) newBooking));
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError, 
+                ErrorResponses.CreateFailedCode500(ex.Message));
         }
     }
 
-    [HttpPut]
-    public IActionResult Update(BookingDTO bookingDTO)
+    // Endpoint for update booking data
+    [HttpPut, Authorize("admin")]
+    public IActionResult Update(BookingDTO request)
     {
         try
         {
-            // Check if data available
-            Booking? entity = _repository.GetByGuid(bookingDTO.Guid);
+            // Check data availability
+            Booking? getBookingResult = _bookingRepository.GetByGuid(request.Guid);
+            bool isEmployeeAvailable = _employeeRepository.IsAvailable(request.EmployeeGuid);
+            bool isRoomAvailable = _roomRepository.IsAvailable(request.RoomGuid);
 
-            // Handling null data
-            if (entity is null)
+            // Handling unvailable booking data
+            if (getBookingResult is null || !isEmployeeAvailable || !isRoomAvailable)
             {
-                return NotFound(new ResponseErrorHandler
-                {
-                    Code = StatusCodes.Status404NotFound,
-                    Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
-                });
+                return NotFound(ErrorResponses.DataNotFound("Booking data not found"));
+            }
+
+            // Handling employee or data not found
+            if (!isEmployeeAvailable || !isEmployeeAvailable)
+            {
+                return NotFound(ErrorResponses.DataNotFound("Booking or employee data is not found"));
             }
 
             // Update data
-            Booking toUpdate = bookingDTO;
-            toUpdate.CreatedDate = entity.CreatedDate;
+            Booking toUpdate = request;
+            toUpdate.CreatedDate = getBookingResult.CreatedDate;
 
-            bool result = _repository.Update(toUpdate);
+            bool updateBookingResult = _bookingRepository.Update(toUpdate);
 
-            // Throw an exception if update failed
-            if (!result)
+            // Update failed handling
+            if (!updateBookingResult)
             {
-                throw new ExceptionHandler(Message.ErrorOnUpdatingData);
+                throw new ExceptionHandler("Failed to update booking data");
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataUpdated);
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Messages.DataUpdated);
 
-            return Ok(response);
+            return Ok(OkResponses.SuccessUpdate());
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError, 
+                ErrorResponses.UpdateFailedCode500(ex.Message));
         }
     }
 
-    [HttpDelete("{guid}")]
+    // Endpoint for delete booking data
+    [HttpDelete("{guid}"), Authorize(Roles = "manager")]
     public IActionResult Delete(Guid guid)
     {
         try
         {
             // Check if data available
-            Booking? data = _repository.GetByGuid(guid);
+            Booking? getBookingResult = _bookingRepository.GetByGuid(guid);
 
             // Handling null data
-            if (data is null)
+            if (getBookingResult is null)
             {
-                return NotFound(new ResponseErrorHandler
-                {
-                    Code = StatusCodes.Status404NotFound,
-                    Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
-                });
+                return NotFound(ErrorResponses.DataNotFound());
             }
 
             // Delete data
-            bool result = _repository.Delete(data);
+            bool isBookingDeletedResult = _bookingRepository.Delete(getBookingResult);
 
             // Throw an exception if update failed
-            if (!result)
+            if (!isBookingDeletedResult)
             {
-                throw new ExceptionHandler(Message.ErrorOnDeletingData);
+                throw new ExceptionHandler("Failed to delete booking data");
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Messages.DataDeleted);
 
             return Ok(response);
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError, 
+                ErrorResponses.DeleteFailedCode500(ex.Message));
         }
+    }
+
+    // Endpoint for getting all booking data with detailed information
+    [HttpGet, Authorize(Roles = "admin")]
+    [Route("detail")]
+    public IActionResult GetAllDetail()
+    {
+        // Get data collection from repository
+        IEnumerable<Booking> getBookingsResult = _bookingRepository.GetAll();
+
+        // Handling empty colletion
+        if (!getBookingsResult.Any())
+        {
+            return NotFound(ErrorResponses.DataNotFound());
+        }
+
+        // Create booking detail dto with LINQ
+        var employees = _employeeRepository.GetAll();
+        var rooms = _roomRepository.GetAll();
+        var details = from booking in getBookingsResult
+                      join employee in employees on booking.EmployeeGuid equals employee.Guid
+                      join room in rooms on booking.RoomGuid equals room.Guid
+                      select new BookingDetailDTO
+                      {
+                          Guid = booking.Guid,
+                          BookedNIK = employee.NIK,
+                          BookedBy = string.Concat(employee.FirstName, " ", employee.LastName),
+                          RoomName = room.Name,
+                          StartDate = booking.StartDate,
+                          Enddate = booking.EndDate,
+                          Status = booking.Status,
+                          Remarks = booking.Remarks
+                      };
+
+        // Return success response
+        return Ok(OkResponses.Success(details));
+    }
+
+    // Endpoint for getting detailed booking data information by guid
+    [HttpGet]
+    [Route("details/{guid}")]
+    public IActionResult GetDetailByGuid(Guid guid)
+    {
+        // Check booking data availability 
+        Booking? booking = _bookingRepository.GetByGuid(guid);
+        
+        if(booking is null)
+        {
+            return NotFound(ErrorResponses.DataNotFound());
+        }
+
+        // Get employee and room data
+        Employee? employee = _employeeRepository.GetByGuid(booking.EmployeeGuid);
+        Room? room = _roomRepository.GetByGuid(booking.RoomGuid);
+
+        // Create booking detail dto
+        var bookingdetailDTO = new BookingDetailDTO
+        {
+            Guid = booking.Guid,
+            BookedNIK = employee.NIK,
+            BookedBy = string.Concat(employee.FirstName, " ", employee.LastName),
+            RoomName = room.Name,
+            StartDate = booking.StartDate,
+            Enddate = booking.EndDate,
+            Status = booking.Status,
+            Remarks = booking.Remarks
+        };
+
+        // Return success response
+        return Ok(OkResponses.Success(bookingdetailDTO));
+    }
+
+    // Endpoint for getting booking duration
+    [HttpGet]
+    [Route("duration")]
+    public IActionResult GetDuration()
+    {
+        // Check booking data
+        var bookings = _bookingRepository.GetAll();
+        var rooms = _roomRepository.GetAll();
+
+        // Handling empty colletion
+        if (!bookings.Any())
+        {
+            return NotFound(ErrorResponses.DataNotFound());
+        }
+
+        // Join 
+        var bookingDuration = from booking in bookings
+                              join room in rooms on booking.RoomGuid equals room.Guid
+                              select new BookingDurationDTO
+                              {
+                                  RoomGuid = room.Guid,
+                                  RoomName = room.Name,
+                                  BookingLength = GenerateHandler.BookingDuration(booking.StartDate, booking.EndDate)
+                              };
+
+        // Return success
+        return Ok(OkResponses.Success(bookingDuration));
     }
 }

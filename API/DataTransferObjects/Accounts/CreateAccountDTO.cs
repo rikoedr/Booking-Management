@@ -18,7 +18,7 @@ public class CreateAccountDTO
             Password = createAccountDTO.Password,
             IsDeleted = false,
             IsUsed = true,
-            ExpiredTime = DateTime.Today.AddDays(30),
+            ExpiredTime = DateTime.Now,
             OTP = createAccountDTO.OTP
         };
     }

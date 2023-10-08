@@ -1,4 +1,5 @@
 ﻿using API.DataTransferObjects.Accounts;
+using API.Utilities.Responses;
 using FluentValidation;
 
 namespace API.Utilities.Validations.AccountValidations;
@@ -8,7 +9,7 @@ public class AccountEmailRequestValidator : AbstractValidator<AccountEmailReques
     public AccountEmailRequestValidator()
     {
         RuleFor(a => a.Email)
-            .NotEmpty().WithMessage(Message.EmptyEmail)
-            .EmailAddress().WithMessage(Message.InvalidEmailFormat);
+            .NotEmpty().WithMessage(Messages.EmptyEmail)
+            .EmailAddress().WithMessage(Messages.InvalidEmailFormat);
     }
 }

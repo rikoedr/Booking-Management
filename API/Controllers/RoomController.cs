@@ -5,8 +5,10 @@ using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using API.Repositories;
 using API.Utilities.Handlers;
-using API.Utilities;
 using System.Net;
+using API.Utilities.Responses;
+using API.DataTransferObjects.Bookings;
+using System.Security.Cryptography;
 
 namespace API.Controllers;
 
@@ -21,18 +23,22 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class RoomController : ControllerBase
 {
-    private readonly RoomRepository _repository;
+    private readonly RoomRepository _roomRepository;
+    private readonly EmployeeRepository _employeeRepository;
+    private readonly BookingRepository _bookingRepository;
 
-    public RoomController(RoomRepository repository)
+    public RoomController(RoomRepository repository, EmployeeRepository employeeRepository, BookingRepository bookingRepository)
     {
-        _repository = repository;
+        _roomRepository = repository;
+        _employeeRepository = employeeRepository;
+        _bookingRepository = bookingRepository;
     }
 
     [HttpGet]
     public IActionResult GetAll()
     {
         // Get data collection from repository
-        IEnumerable<Room> dataCollection = _repository.GetAll();
+        IEnumerable<Room> dataCollection = _roomRepository.GetAll();
 
         // Handling null data
         if (!dataCollection.Any())
@@ -41,7 +47,7 @@ public class RoomController : ControllerBase
             {
                 Code = StatusCodes.Status404NotFound,
                 Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
+                Message = Messages.DataNotFound
 
             });
         }
@@ -57,7 +63,7 @@ public class RoomController : ControllerBase
     public IActionResult GetByGuid(Guid guid)
     {
         // Check if data available
-        Room? data = _repository.GetByGuid(guid);
+        Room? data = _roomRepository.GetByGuid(guid);
 
         // Handling request if data is not found
         if (data is null)
@@ -66,7 +72,7 @@ public class RoomController : ControllerBase
             {
                 Code = StatusCodes.Status404NotFound,
                 Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
+                Message = Messages.DataNotFound
             });
         }
 
@@ -82,7 +88,7 @@ public class RoomController : ControllerBase
         try
         {
             // Create data from request paylod
-            Room? result = _repository.Create(roomDTO);
+            Room? result = _roomRepository.Create(roomDTO);
 
             // Return success response
             ResponseOKHandler<RoomDTO> response = new ResponseOKHandler<RoomDTO>((RoomDTO)result);
@@ -95,7 +101,7 @@ public class RoomController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
+                Message = Messages.FailedToCreateData,
                 Error = ex.Message
             };
 
@@ -109,7 +115,7 @@ public class RoomController : ControllerBase
         try
         {
             // Check if data available
-            Room? entity = _repository.GetByGuid(roomDTO.Guid);
+            Room? entity = _roomRepository.GetByGuid(roomDTO.Guid);
 
             // Handling null data
             if (entity is null)
@@ -118,7 +124,7 @@ public class RoomController : ControllerBase
                 {
                     Code = StatusCodes.Status404NotFound,
                     Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
+                    Message = Messages.DataNotFound
                 });
             }
 
@@ -126,16 +132,16 @@ public class RoomController : ControllerBase
             Room toUpdate = roomDTO;
             toUpdate.CreatedDate = entity.CreatedDate;
 
-            bool result = _repository.Update(toUpdate);
+            bool result = _roomRepository.Update(toUpdate);
 
             // Throw an exception if update failed
             if (!result)
             {
-                throw new ExceptionHandler(Message.ErrorOnUpdatingData);
+                throw new ExceptionHandler(Messages.ErrorOnUpdatingData);
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataUpdated);
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Messages.DataUpdated);
 
             return Ok(response);
         }
@@ -145,7 +151,7 @@ public class RoomController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
+                Message = Messages.FailedToCreateData,
                 Error = ex.Message
             };
 
@@ -159,7 +165,7 @@ public class RoomController : ControllerBase
         try
         {
             // Check if data available
-            Room? data = _repository.GetByGuid(guid);
+            Room? data = _roomRepository.GetByGuid(guid);
 
             // Handling null data
             if (data is null)
@@ -168,21 +174,21 @@ public class RoomController : ControllerBase
                 {
                     Code = StatusCodes.Status404NotFound,
                     Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
+                    Message = Messages.DataNotFound
                 });
             }
 
             // Delete data
-            bool result = _repository.Delete(data);
+            bool result = _roomRepository.Delete(data);
 
             // Throw an exception if update failed
             if (!result)
             {
-                throw new ExceptionHandler(Message.ErrorOnDeletingData);
+                throw new ExceptionHandler(Messages.ErrorOnDeletingData);
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Messages.DataDeleted);
 
             return Ok(response);
         }
@@ -192,11 +198,94 @@ public class RoomController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
+                Message = Messages.FailedToCreateData,
                 Error = ex.Message
             };
 
             return StatusCode(StatusCodes.Status500InternalServerError, response);
         }
+    }
+
+    [HttpGet]
+    [Route("today/occupied")]
+    public IActionResult GetTodayOccupiedRooms()
+    {
+        // Get data collection from repository
+        IEnumerable<Booking> bookings = _bookingRepository.GetAll();
+
+        // Handling empty colletion
+        if (!bookings.Any())
+        {
+            return NotFound(ErrorResponses.DataNotFound("No rooms have been occupied yet"));
+        }
+
+        // Filter collection based on date (today)
+        IEnumerable<Booking> todayBookings = bookings.Where(booking => booking.StartDate.Date == DateTime.Today.Date);
+
+        // Handling empty today active room
+        if (!todayBookings.Any())
+        {
+            return NotFound(ErrorResponses.DataNotFound("No rooms have been occupied today"));
+        }
+
+        // Return success response
+        var employees = _employeeRepository.GetAll();
+        var rooms = _roomRepository.GetAll();
+        var occupiedRooms = from booking in todayBookings
+                            join employee in employees on booking.EmployeeGuid equals employee.Guid
+                            join room in rooms on booking.RoomGuid equals room.Guid
+                            select new TodayOccupiedRoomDto
+                            {
+                                BookingGuid = booking.Guid,
+                                RoomName = room.Name,
+                                Status = booking.Status,
+                                Floor = room.Floor,
+                                BookedBy = string.Concat(employee.FirstName, " ", employee.LastName)
+                            };
+
+        return Ok(OkResponses.Success(occupiedRooms));
+    }
+
+    [HttpGet]
+    [Route("today/available")]
+    public IActionResult GetTodayAvalableRooms()
+    {
+        // Get all room & booking records
+        var rooms = _roomRepository.GetAll();
+        var bookings = _bookingRepository.GetAll();
+
+        // Return all rooms
+        if (!bookings.Any())
+        {
+            return Ok(OkResponses.Success((RoomDTO) rooms));
+        }
+
+        // Filter booking records by today
+        var todayBookings = bookings.Where(booking => booking.StartDate.Date == DateTime.Today.Date);
+        
+        if (!todayBookings.Any())
+        {
+            return Ok(OkResponses.Success((RoomDTO)rooms));
+        }
+
+        var todayOccupiedRooms = from booking in todayBookings
+                                 join room in rooms on booking.RoomGuid equals room.Guid
+                                 select room;
+
+        // Except all rooms and occupied rooms by guid
+        Guid[] occupiedRoomGuids = todayOccupiedRooms.Select(item => item.Guid).ToArray();
+        Guid[] roomGuids = rooms.Select(item => item.Guid).ToArray();
+        var availableRoomGuids = roomGuids.Except(occupiedRoomGuids);
+
+        // Get All Available Room by Guid
+        var availableRooms = new List<RoomDTO>();
+        foreach(Guid guid in availableRoomGuids)
+        {
+            var room = rooms.First(item => item.Guid == guid);
+            availableRooms.Add((RoomDTO)room);
+        }
+
+        // Return success response
+        return Ok(OkResponses.Success(availableRooms));
     }
 }

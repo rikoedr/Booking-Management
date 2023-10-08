@@ -14,4 +14,9 @@ public class AccountRoleRepository : AbstractRepository<AccountRole>, IGeneralRe
     public AccountRoleRepository(BookingManagementDbContext context) : base(context)
     {
     }
+
+    public IEnumerable<AccountRole> GetByAccountGuid(Guid accountGuid)
+    {
+      return base._context.Set<AccountRole>().Where(item => item.AccountGuid == accountGuid).ToList(); ;
+    }
 }

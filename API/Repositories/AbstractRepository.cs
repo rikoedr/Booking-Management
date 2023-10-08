@@ -77,4 +77,16 @@ public abstract class AbstractRepository<TEntity> : IGeneralRepository<TEntity>
         }
     }
 
+    public bool IsAvailable(Guid guid)
+    {
+        TEntity? entity = _context.Set<TEntity>().Find(guid);
+        
+        if (entity is null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
 }

@@ -59,7 +59,8 @@ public class BookingManagementDbContext : DbContext
         modelBuilder.Entity<Account>()
             .HasMany(ar => ar.AccountRoles)
             .WithOne(a => a.Account)
-            .HasForeignKey(ar => ar.AccountGuid);
+            .HasForeignKey(ar => ar.AccountGuid)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Role>()
             .HasMany(ar => ar.AccountRoles)

@@ -3,292 +3,220 @@ using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using API.DataTransferObjects;
 using API.Utilities.Handlers;
-using API.Utilities;
 using System.Net;
 using API.Repositories;
 using API.DataTransferObjects.Accounts;
 using API.DataTransferObjects.EmployeeAccounts;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using API.Data;
+using API.Utilities.Responses;
+using API.Utilities;
 
 namespace API.Controllers;
 
-/*
- * Account Controller adalah class untuk yang mengatur penerimaan request dan pengembalian response API.
- * Class ini terhubung dengan class Account Repository yang berfungsi untuk melakukan ORM.
- * Success dan Error Response di dalam controller ini di handle oleh ControllerBase dan Utility Class
- * terkait format Response API.
- */
-
-[Authorize]
+// ACCOUNT CONTROLLER IS A CLASS FOR SETTING UP ACCOUNT ENDPOINT.
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]"), Authorize]
 public class AccountController : ControllerBase
 {
     private readonly AccountRepository _accountRepository;
     private readonly EmployeeRepository _employeeRepository;
+    private readonly EducationRepository _educationRepository;
     private readonly UniversityRepository _universityRepository;
+    private readonly RoleRepository _roleRepository;
+    private readonly AccountRoleRepository _accountRoleRepository;
     private readonly IEmailHandler _emailHandler;
     private readonly EmployeeAccountRepository _employeeAccountRepository;
     private readonly ITokenHandler _tokenHandler;
+    private readonly BookingManagementDbContext _context;
 
-    public AccountController(AccountRepository accountRepository, EmployeeRepository employeeRepository,
-        UniversityRepository universityRepository, IEmailHandler emailHandler, EmployeeAccountRepository employeeAccountRepository,
-        ITokenHandler tokenHandler)
+    public AccountController(AccountRepository accountRepository, EmployeeRepository employeeRepository, EducationRepository educationRepository, UniversityRepository universityRepository, RoleRepository roleRepository, AccountRoleRepository accountRoleRepository, IEmailHandler emailHandler, EmployeeAccountRepository employeeAccountRepository, ITokenHandler tokenHandler, BookingManagementDbContext context)
     {
         _accountRepository = accountRepository;
         _employeeRepository = employeeRepository;
+        _educationRepository = educationRepository;
         _universityRepository = universityRepository;
+        _roleRepository = roleRepository;
+        _accountRoleRepository = accountRoleRepository;
         _emailHandler = emailHandler;
         _employeeAccountRepository = employeeAccountRepository;
         _tokenHandler = tokenHandler;
+        _context = context;
     }
 
-    [HttpGet]
+    [HttpGet, Authorize(Roles = "manager")]
     public IActionResult GetAll()
     {
-        // Get data collection from repository
-        IEnumerable<Account> dataCollection = _accountRepository.GetAll();
+        // Retrieve all accounts from the repository
+        var accounts = _accountRepository.GetAll();
 
-        // Handling null data
-        if (!dataCollection.Any())
-        {
-            return NotFound(new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status404NotFound,
-                Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
-            });
+        // Handle empty accounts data
+        if (!accounts.Any()) 
+        { 
+            return NotFound(ErrorResponses.DataNotFound()); 
         }
 
-        // Return success response
-        IEnumerable<AccountDTO> data = dataCollection.Select(item => (AccountDTO)item);
-        ResponseOKHandler<IEnumerable<AccountDTO>> response = new ResponseOKHandler<IEnumerable<AccountDTO>>(data);
+        // Return a success response
+        var accountsDto = accounts.Select(item => (AccountDTO)item);
 
-        return Ok(response);
+        return Ok(OkResponses.Success(accountsDto));
     }
 
-    [HttpGet("{guid}")]
+    [HttpGet("{guid}"), Authorize(Roles = "manager")]
     public IActionResult GetByGuid(Guid guid)
     {
-        // Check if data available
-        Account? data = _accountRepository.GetByGuid(guid);
+        // Check account availability with Guid
+        Account? account = _accountRepository.GetByGuid(guid);
 
-        // Handling request if data is not found
-        if (data is null)
+        // Handle unregistered guid accounts
+        if (account is null)
         {
-            return NotFound(new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status404NotFound,
-                Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
-            });
+            return NotFound(ErrorResponses.DataNotFound());
         }
 
-        // Return success response 
-        AccountDTO response = (AccountDTO)data;
-
-        return Ok(response);
+        // Return a success response
+        return Ok(OkResponses.Success((AccountDTO) account));
     }
 
-    [HttpPost]
+    [HttpPost, AllowAnonymous]
     public IActionResult Create(CreateAccountDTO accountDTO)
     {
         try
         {
-            // Create data from request paylod
+            // Create an account object from the request payload
             Account toCreate = accountDTO;
             toCreate.Password = HashingHandler.HashPassword(accountDTO.Password);
 
-            // Return success response
+            // Create a new account via the repository
             Account? result = _accountRepository.Create(toCreate);
-            ResponseOKHandler<AccountDTO> response = new ResponseOKHandler<AccountDTO>((AccountDTO)result);
 
-            return Ok(response);
+            // Return a success response and a DTO object
+            return Ok(OkResponses.Success((AccountDTO) result));
         }
         catch (ExceptionHandler ex)
-        {
-            ResponseErrorHandler response = new ResponseErrorHandler()
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        {           
+            return StatusCode(StatusCodes.Status500InternalServerError, ErrorResponses.InternalServerError(ex.Message));
         }
     }
 
-    [HttpPut]
+    [HttpPut, Authorize(Roles = "user")]
     public IActionResult Update(AccountDTO accountDTO)
     {
         try
         {
-            // Check if data available
-            Account? entity = _accountRepository.GetByGuid(accountDTO.Guid);
+            // Check account availability with guid
+            Account? account = _accountRepository.GetByGuid(accountDTO.Guid);
 
-            // Handling null data
-            if (entity is null)
+            // Handle unregistered guid accounts
+            if (account is null)
             {
-                return NotFound(new ResponseErrorHandler
-                {
-                    Code = StatusCodes.Status404NotFound,
-                    Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
-                });
+                return NotFound(ErrorResponses.DataNotFound());
             }
 
-            // Update data
+            // Perbarui data akun melalui repositori
             Account toUpdate = accountDTO;
-            toUpdate.CreatedDate = entity.CreatedDate;
+            toUpdate.CreatedDate = account.CreatedDate;
 
-            bool result = _accountRepository.Update(toUpdate);
+            bool updateAccount = _accountRepository.Update(toUpdate);
 
-            // Throw an exception if update failed
-            if (!result)
+            // Update account data via repository
+            if (!updateAccount)
             {
-                throw new ExceptionHandler(Message.ErrorOnUpdatingData);
+                throw new ExceptionHandler(Messages.ErrorOnUpdatingData);
             }
 
-            // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataUpdated);
-
-            return Ok(response);
+            // Return a success response
+            return Ok(OkResponses.SuccessUpdate());
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(StatusCodes.Status500InternalServerError, ErrorResponses.InternalServerError(ex.Message));
         }
     }
 
-    [HttpDelete("{guid}")]
+    [HttpDelete("{guid}"), Authorize(Roles = "manager")]
     public IActionResult Delete(Guid guid)
     {
         try
         {
-            // Check if data available
-            Account? data = _accountRepository.GetByGuid(guid);
+            // Check account availability with guid
+            Account? account = _accountRepository.GetByGuid(guid);
 
-            // Handling null data
-            if (data is null)
+            // Handle unregistered account guid
+            if (account is null)
             {
-                return NotFound(new ResponseErrorHandler
-                {
-                    Code = StatusCodes.Status404NotFound,
-                    Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
-                });
+                return NotFound(ErrorResponses.DataNotFound());
             }
 
-            // Delete data
-            bool result = _accountRepository.Delete(data);
+            // Delete account via repository
+            bool deleteAccount = _accountRepository.Delete(account);
 
-            // Throw an exception if update failed
-            if (!result)
+            // Handle failure to delete account in repository
+            if (!deleteAccount)
             {
-                throw new ExceptionHandler(Message.ErrorOnDeletingData);
+                throw new ExceptionHandler(Messages.ErrorOnDeletingData);
             }
 
-            // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
-
-            return Ok(response);
+            // Return a success response
+            return Ok(OkResponses.SuccessDelete());
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(StatusCodes.Status500InternalServerError, ErrorResponses.InternalServerError(ex.Message));
         }
     }
 
-    /*
-     * Forgot Password adalah endpoint yang digunakan untuk request kode OTP yang akan
-     * dimanfaatkan ketika mengganti password.
-     */
-
-    [AllowAnonymous]
-    [HttpPost]
+    
+    [HttpPost, AllowAnonymous]
     [Route("forgot-password")]
     public IActionResult ForgotPassword(AccountEmailRequestDTO accountEmailRequestDTO)
     {
         try
         {
-            // Cek apakah email terdaftar dalam database
+            // Check employee data availability based on Email
             Employee? employeeData = _employeeRepository.GetByEmail(accountEmailRequestDTO.Email);
 
-            // Handling jika data employee berdasarkan input email tidak ditemukan
+            // Handle unregistered employee data
             if (employeeData is null)
             {
-                return NotFound(new ResponseErrorHandler
-                {
-                    Code = StatusCodes.Status404NotFound,
-                    Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
-                });
+                return NotFound(ErrorResponses.DataNotFound());
             }
 
-            // Update informasi OTP untuk akun yang dipilih
+            // Update OTP information for the selected account
             Account accountData = _accountRepository.GetByGuid(employeeData.Guid);
-            accountData.OTP = GenerateHandler.CreateOTP();
+            accountData.OTP = GenerateHandler.OTP();
             accountData.IsUsed = false;
             accountData.ExpiredTime = DateTime.Now.AddMinutes(5);
 
             bool updateEntity = _accountRepository.Update(accountData);
 
-            // Throw exception jika terjadi kegagalan dalam proses update di repository
+            // Handle update failures in the repository
             if (!updateEntity)
             {
                 throw new ExceptionHandler("Failed to Update OTP");
             }
 
-            // Kirim kode OTP ke Email dan kirim return berhasil
+            // Send the OTP code to email and return success response
             string otpMessage = $"Your OTP Code : {accountData.OTP}, Valid Until : {accountData.ExpiredTime}";
             _emailHandler.Send("RESET PASSWORD", otpMessage, accountEmailRequestDTO.Email);
 
-            return Ok(new ResponseOKHandler<string>(Message.OTPCodeHasSent));
+            return Ok(OkResponses.Success(Messages.OTPCodeHasSent));
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToUpdateData,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(StatusCodes.Status500InternalServerError, ErrorResponses.InternalServerError(ex.Message));
         }
     }
 
-    /*
-     * Change Password adalah endpoint yang berfungsi untuk melakukan perubahan password.
-     * Endpoint ini membutuhkan format request yang sudah dibuat dalam Account New Password DTO.
-     */
 
     [HttpPost]
-    [Route("change-password")]
+    [Route("change-password"), AllowAnonymous]
     public IActionResult ChangePassword(AccountNewPasswordRequestDTO changeAccountPasswordDTO)
     {
         try
         {
-            // Validasi apakah email yang dikirim terdaftar dalam database
+            // Check employee data availability based on Email
             Employee? employeeData = _employeeRepository.GetByEmail(changeAccountPasswordDTO.Email);
 
             if (employeeData is null)
@@ -297,60 +225,60 @@ public class AccountController : ControllerBase
                 {
                     Code = StatusCodes.Status404NotFound,
                     Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
+                    Message = Messages.DataNotFound
                 });
             }
 
-            // Ambil data akun berdasarkan GUID yang didapatkan dari proses sebelumnya
+            // Retrieve account data based on the GUID obtained from the previous process
             Account? accountData = _accountRepository.GetByGuid(employeeData.Guid);
 
-            // Validasi kesamaan kode OTP dalam request dengan di database
+            // Validate the similarity of the OTP code in the request with that in the database
             if (changeAccountPasswordDTO.OTP != accountData.OTP)
             {
                 return Unauthorized(new ResponseErrorHandler
                 {
                     Code = StatusCodes.Status401Unauthorized,
                     Status = HttpStatusCode.Unauthorized.ToString(),
-                    Message = Message.InvalidOTPCode
+                    Message = Messages.InvalidOTPCode
                 });
             }
 
-            // Validasi apakah kode OTP sudah pernah digunakan atau tidak
+            // Validate whether the OTP code has been used or not
             if (accountData.IsUsed)
             {
                 return StatusCode(StatusCodes.Status410Gone, new ResponseErrorHandler
                 {
                     Code = StatusCodes.Status410Gone,
                     Status = HttpStatusCode.Gone.ToString(),
-                    Message = Message.OTPCodeAlreadyUsed
+                    Message = Messages.OTPCodeAlreadyUsed
                 });
             }
 
-            // Validasi apakah kode OTP sudah kadaluarsa
+            // Validate whether the OTP code has expired
             if (accountData.ExpiredTime <= DateTime.Now)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new ResponseErrorHandler
                 {
                     Code = StatusCodes.Status403Forbidden,
                     Status = HttpStatusCode.Forbidden.ToString(),
-                    Message = Message.OTPCodeHasExpired
+                    Message = Messages.OTPCodeHasExpired
                 });
             }
 
-            // Perbarui data password jika validasi OTP telah berhasil
+            // Update password data after passing validation
             Account toUpdate = accountData;
             toUpdate.Password = HashingHandler.HashPassword(changeAccountPasswordDTO.NewPassword);
             toUpdate.IsUsed = true;
 
             bool result = _accountRepository.Update(toUpdate);
 
-            // Throw exception jika terjadi kegagalan dalam update data di Repository
+            // Handle update failures in the repository
             if (!result)
             {
                 throw new ExceptionHandler("Failed to Update Password");
             }
 
-            // Return Ok jika seluruh proses berhasil
+            // Return Ok if the entire process is successful
             return Ok(new ResponseOKHandler<string>("Password changed"));
         }
         catch (ExceptionHandler ex)
@@ -359,7 +287,7 @@ public class AccountController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToUpdateData,
+                Message = Messages.FailedToUpdateData,
                 Error = ex.Message
             };
 
@@ -367,120 +295,116 @@ public class AccountController : ControllerBase
         }
     }
 
-    /*
-     * Login adalah endpoint yang digunakan untuk melakukan validasi login berdasarkan
-     * data yang dikirim dalam HttpRequest.
-     * Format data request untuk endpoint ini diatur oleh AccountLoginRequestDTO, dimana
-     * class ini juga diterapkan validasi input.
-     */
 
-    [AllowAnonymous]
     [HttpPost]
-    [Route("login")]
+    [Route("login"), AllowAnonymous]
     public IActionResult Login(AccountLoginRequestDTO accountLoginDTO)
     {
         try
         {
-            // Validasi apakah email yang dikirim terdaftar atau tidak
+            // Check employee data availability based on Email
             Employee? employee = _employeeRepository.GetByEmail(accountLoginDTO.Email);
 
-            // Deklarasi format error response karena akan digunakan dalam beberapa skenario
-            ResponseErrorHandler errorResponse = new ResponseErrorHandler
+            if (employee is null) 
             {
-                Code = StatusCodes.Status401Unauthorized,
-                Status = HttpStatusCode.Unauthorized.ToString(),
-                Message = Message.AccountPasswordInvalid
-            };
+                return Unauthorized(ErrorResponses.AccountPasswordInvalid());
+            }
 
-            // Response error karena data employee dengan email yang dikirim tidak ada
-            if (employee is null) return Unauthorized(errorResponse);
-
-            // Ambil data akun berdasarkan GUID dari objek employee sebelumnya
+            // Validate account data
             Account? account = _accountRepository.GetByGuid(employee.Guid);
 
-            // Response error karena objek employee belum memiliki akun
-            if (account is null) return Unauthorized(errorResponse);
+            if (account is null)
+            {
+                return Unauthorized(ErrorResponses.AccountPasswordInvalid());
+            }
 
-            // Validasi password dari request dengan yang ada di database
+            // Validate the password from the request with the one in the database
             bool isVerified = HashingHandler.VerifyPassword(accountLoginDTO.Password, account.Password);
 
-            // Response error karena password tidak sesuai 
             if (!isVerified)
             {
-                return Unauthorized(errorResponse);
+                return Unauthorized(ErrorResponses.AccountPasswordInvalid());
                 ;
             }
 
-            // Buat JWT Token
+            // Get Account Roles
+            var accountRoles = _accountRoleRepository.GetByAccountGuid(account.Guid);
+
+
+            // Create JWT Token
             List<Claim> claims = new List<Claim>();
             claims.Add(new Claim("Email", employee.Email));
             claims.Add(new Claim("FullName", string.Concat(employee.FirstName," ", employee.LastName)));
 
+            // Add roles in claims
+            foreach (var item in accountRoles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, _roleRepository.GetByGuid(item.RoleGuid).Name));
+            }
+
             string generateToken = _tokenHandler.Generate(claims);
 
-            // Response berhasil setelah seluruh proses validasi sukses
-            ResponseOKHandler<object> response = new ResponseOKHandler<object>("Login success", new { Token = generateToken });
-            
-            return Ok(response);
+            // Return a success response
+            return Ok(OkResponses.Success("Login success", new { Token = generateToken}));
         }
         catch (ExceptionHandler ex)
-        {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.LoginFailed,
-                Error = ex.Message
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        { 
+            return StatusCode(StatusCodes.Status500InternalServerError, ErrorResponses.InternalServerError(ex.Message));
         }
     }
 
-    /*
-     * Registration adalah endpoint yang digunakan untuk menerima request pendaftaran,
-     * endpoint ini akan menerima format DTO yang merupakan gabungan dari data-data
-     * Employee dan Account.
-     * Registration menggunakan repository EmployeeAccount yang merupakan repository
-     * khusus untuk menangani transaksi bersama antara entity Employee dan entity Account.
-     */
 
-    [AllowAnonymous]
-    [HttpPost]
+    [HttpPost, AllowAnonymous]
     [Route("registration")]
     public IActionResult Registration(CreateEmployeeAccountDTO accountRegistration)
     {
+        using var transaction = _context.Database.BeginTransaction();
         try
         {
-            // Validasi email yang dikirim apakah terdaftar atau tidak
+            // Check employee data availability based on Emailk
             Employee? employee = _employeeRepository.GetByEmail(accountRegistration.Email);
 
-            // Kirim response conflict jika email sudah terdaftar
+            // Return a conflict response if the email is already registered
             if (employee is not null)
             {
-                return Conflict(new ResponseErrorHandler
-                {
-                    Code = StatusCodes.Status409Conflict,
-                    Status = HttpStatusCode.Conflict.ToString(),
-                    Message = Message.EmailAlreadyRegistered
-                });
+                return Conflict(ErrorResponses.DataConflict(Messages.EmailAlreadyRegistered));
             }
 
-            // Validasi data university yang dikirim apakah terdaftar ataut tidak
+            // Create new employee data
+            Employee newEmployee = accountRegistration; //implicit operator 
+            newEmployee.NIK = GenerateHandler.NIK(_employeeRepository.GetLastNIK());
+
+            Employee? createEmployee = _employeeRepository.Create(newEmployee);
+
+            if (createEmployee is null)
+            {
+                throw new ExceptionHandler(Messages.FailedToCreateData);
+            }
+
+            // Create new account data
+            Account newAccount = accountRegistration;
+            newAccount.Password = HashingHandler.HashPassword(newAccount.Password);
+
+            Account? createAccount = _accountRepository.Create(newAccount);
+
+            if (createAccount is null)
+            {
+                throw new ExceptionHandler(Messages.FailedToCreateData);
+            }
+
+            // Validate university data in the request with code
             University? university = _universityRepository.GetByCode(accountRegistration.UniversityCode);
 
-            // Handling ketersediaan data university
+            // Handling university data availability
             if (university is null)
             {
-                // Buat baru data university jika belum terdaftar
-                _universityRepository.Create(new University
+                University newUniversity = accountRegistration;
+                University? createUniversity = _universityRepository.Create(newUniversity);
+
+                if(createUniversity is null)
                 {
-                    Guid = Guid.NewGuid(),
-                    CreatedDate = DateTime.Now,
-                    ModifiedDate = DateTime.Now,
-                    Code = accountRegistration.UniversityCode,
-                    Name = accountRegistration.UniversityName
-                });
+                    throw new ExceptionHandler(Messages.FailedToCreateUniversity);
+                }
             }
             else
             {
@@ -489,33 +413,37 @@ public class AccountController : ControllerBase
                 accountRegistration.UniversityName = university.Name;
             }
 
-            // Memulai transaksi ORM
-            EmployeeAccount employeeAccount = accountRegistration;
-            employeeAccount.NIK = GenerateHandler.CreateNIK(_employeeRepository.GetLastNIK());
-            employeeAccount.Password = HashingHandler.HashPassword(employeeAccount.Password);
+            // Create new education data
+            Education newEducation = accountRegistration; // implicit operator
+            newEducation.UniversityGuid = _universityRepository.GetByCode(accountRegistration.UniversityCode).Guid;
+            Education? createEducation = _educationRepository.Create(newEducation);
+            
+            if(createEducation is null)
+            {
+                throw new ExceptionHandler(Messages.FailedToCreateEducation);
+            }
 
-            // Memanggil Create dari Repository EmployeeAccount
-            EmployeeAccount? createEmployeeAccount = _employeeAccountRepository.Create(employeeAccount);
+            // Create a new role account (default user)
+            AccountRole newAccountRole = accountRegistration;
+            AccountRole? createAccountRole = _accountRoleRepository.Create(newAccountRole);
 
-            if (createEmployeeAccount is null) throw new ExceptionHandler(Message.FailedToCreateData);
+            if(createAccountRole is null)
+            {
+                throw new ExceptionHandler(Messages.FailedToCreateAccountRole);
+
+            }
+
+            // Commit
+            transaction.Commit();
 
             // Return response
-            Debugger.Message("Cek di controlelr");
-            ResponseOKHandler<EmployeeAccountDTO> response = new ResponseOKHandler<EmployeeAccountDTO>((EmployeeAccountDTO)createEmployeeAccount);
-
-            return Ok(response);
+            return Ok(OkResponses.Success());
         }
         catch (ExceptionHandler ex)
         {
-            ResponseErrorHandler response = new ResponseErrorHandler
-            {
-                Code = StatusCodes.Status500InternalServerError,
-                Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.LoginFailed,
-                Error = ex.Message
-            };
+            transaction.Rollback();
 
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            return StatusCode(StatusCodes.Status500InternalServerError, ErrorResponses.InternalServerError(ex.Message));
         }
     }
 }

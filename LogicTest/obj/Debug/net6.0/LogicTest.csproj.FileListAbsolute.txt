@@ -1,0 +1,14 @@
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\bin\Debug\net6.0\LogicTest.exe
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\bin\Debug\net6.0\LogicTest.deps.json
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\bin\Debug\net6.0\LogicTest.runtimeconfig.json
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\bin\Debug\net6.0\LogicTest.dll
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\bin\Debug\net6.0\LogicTest.pdb
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.GeneratedMSBuildEditorConfig.editorconfig
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.AssemblyInfoInputs.cache
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.AssemblyInfo.cs
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.csproj.CoreCompileInputs.cache
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.dll
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\refint\LogicTest.dll
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.pdb
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\LogicTest.genruntimeconfig.cache
+E:\DTS Coding Camp\Segmen 2 - Backend Development\Project\BookingManagement\LogicTest\obj\Debug\net6.0\ref\LogicTest.dll

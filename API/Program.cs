@@ -37,6 +37,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Add authorization configuration
+
 // Add repositories to the container.
 builder.Services.AddScoped<ITokenHandler, TokenHandler>();
 builder.Services.AddScoped<AccountRepository, AccountRepository>();
@@ -107,6 +109,17 @@ builder.Services.AddSwaggerGen(x => {
 // Add FluentValidation Services
 builder.Services.AddFluentValidationAutoValidation()
     .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+// Add CORS
+builder.Services.AddCors(options => 
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin();
+        policy.AllowAnyHeader();
+        policy.WithMethods("GET", "POST", "DELETE", "PUT");
+    });
+});
 
 var app = builder.Build();
 

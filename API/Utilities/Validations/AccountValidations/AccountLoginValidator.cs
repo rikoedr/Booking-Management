@@ -1,4 +1,5 @@
 ﻿using API.DataTransferObjects.Accounts;
+using API.Utilities.Responses;
 using FluentValidation;
 
 namespace API.Utilities.Validations.AccountValidations
@@ -8,11 +9,11 @@ namespace API.Utilities.Validations.AccountValidations
         public AccountLoginValidator()
         {
             RuleFor(a => a.Email)
-                .NotEmpty().WithMessage(Message.EmptyEmail)
-                .EmailAddress().WithMessage(Message.InvalidEmailFormat);
+                .NotEmpty().WithMessage(Messages.EmptyEmail)
+                .EmailAddress().WithMessage(Messages.InvalidEmailFormat);
 
             RuleFor(a => a.Password)
-                .NotEmpty().WithMessage(Message.EmptyPassword);
+                .NotEmpty().WithMessage(Messages.EmptyPassword);
         }
     }
 }

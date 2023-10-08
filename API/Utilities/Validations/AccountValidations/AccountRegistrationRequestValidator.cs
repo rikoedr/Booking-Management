@@ -1,4 +1,5 @@
 ﻿using API.DataTransferObjects.EmployeeAccounts;
+using API.Utilities.Responses;
 using FluentValidation;
 
 namespace API.Utilities.Validations.AccountValidations;
@@ -8,47 +9,47 @@ public class AccountRegistrationRequestValidator : AbstractValidator<CreateEmplo
     public AccountRegistrationRequestValidator()
     {
         RuleFor(a => a.FirstName)
-            .NotEmpty().WithMessage(Message.FirstNameEmpty);
+            .NotEmpty().WithMessage(Messages.FirstNameEmpty);
 
         RuleFor(a => a.LastName);
 
         RuleFor(a => a.BirthDate)
-            .NotEmpty().WithMessage(Message.BirthDateEmpty)
-            .LessThan(DateTime.Now).WithMessage(Message.BirthDateLessThanNow);
+            .NotEmpty().WithMessage(Messages.BirthDateEmpty)
+            .LessThan(DateTime.Now).WithMessage(Messages.BirthDateLessThanNow);
 
         RuleFor(a => a.Gender);
 
         RuleFor(a => a.HiringDate)
-            .NotEmpty().WithMessage(Message.HiringDateEmpty);
+            .NotEmpty().WithMessage(Messages.HiringDateEmpty);
 
         RuleFor(a => a.Email)
-            .NotEmpty().WithMessage(Message.EmptyEmail)
-            .EmailAddress().WithMessage(Message.InvalidEmailFormat);
+            .NotEmpty().WithMessage(Messages.EmptyEmail)
+            .EmailAddress().WithMessage(Messages.InvalidEmailFormat);
 
         RuleFor(a => a.PhoneNumber)
-            .NotEmpty().WithMessage(Message.PhoneNumberEmpty);
+            .NotEmpty().WithMessage(Messages.PhoneNumberEmpty);
 
         RuleFor(a => a.Major)
-            .NotEmpty().WithMessage(Message.MajorEmpty);
+            .NotEmpty().WithMessage(Messages.MajorEmpty);
 
         RuleFor(a => a.Degree)
-            .NotEmpty().WithMessage(Message.DegreeEmpty);
+            .NotEmpty().WithMessage(Messages.DegreeEmpty);
 
         RuleFor(a => a.GPA);
 
         RuleFor(a => a.UniversityCode)
-            .NotEmpty().WithMessage(Message.UniversityCodeEmpty);
+            .NotEmpty().WithMessage(Messages.UniversityCodeEmpty);
 
         RuleFor(a => a.UniversityName)
-            .NotEmpty().WithMessage(Message.UniversityNameEmpty);
+            .NotEmpty().WithMessage(Messages.UniversityNameEmpty);
 
         RuleFor(a => a.Password)
-            .NotEmpty().WithMessage(Message.EmptyPassword)
-            .MinimumLength(6).WithMessage(Message.PasswordMinimumCharacter);
+            .NotEmpty().WithMessage(Messages.EmptyPassword)
+            .MinimumLength(6).WithMessage(Messages.PasswordMinimumCharacter);
 
         RuleFor(a => a.ConfirmPassword)
-            .NotEmpty().WithMessage(Message.EmptyPassword)
-            .Equal(a => a.Password).WithMessage(Message.PasswordDoNotMatch);
+            .NotEmpty().WithMessage(Messages.EmptyPassword)
+            .Equal(a => a.Password).WithMessage(Messages.PasswordDoNotMatch);
 
 
     }

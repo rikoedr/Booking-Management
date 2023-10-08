@@ -1,10 +1,10 @@
-﻿namespace API.Utilities;
+﻿namespace API.Utilities.Responses;
 
 /*
  * Message Class adalah kumpulan static string untuk message response API.
  */
 
-public class Message
+public class Messages
 {
     /*
      * GENERAL MESSAGES
@@ -29,7 +29,19 @@ public class Message
     public static readonly string CanNotBeEmpty = "This field can not be empty";
     public static readonly string MaximumCharLength100 = "Maximum character length is 100";
     public static readonly string CannotLessThanEqual0 = "The value cannot be less than equal to 0";
-    
+
+    /*
+     * ENDPOINT MESSAGES
+     */
+    // Account Role
+    public static readonly string FailedToCreateAccountRole = "Failed to create account role data";
+
+    // Booking
+    public static readonly string FailedToCreateBookingData = "Failed to create booking data";
+    public static readonly string BookingDataNotFound = "Booking data not found";
+
+    public static readonly string FailedToCreateEducation = "Failed to create education data";
+    public static readonly string FailedToCreateUniversity = "Failed to create university data";
 
     /*
      * FIELD MESSAGES
@@ -70,7 +82,7 @@ public class Message
     public static readonly string UniversityCodeEmpty = "University Code : This field can not be empty";
     public static readonly string UniversityNameEmpty = "University Name : This field can not be empty";
 
-    
+
     /*
      * END POINT MESSAGES
      * Kumpulan message yang dibagi berdasarkan endpoint.

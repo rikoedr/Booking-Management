@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using API.DataTransferObjects;
 using API.DataTransferObjects.Creates;
 using API.Utilities.Handlers;
-using API.Utilities;
 using System.Net;
 using API.Repositories;
+using API.Utilities.Responses;
 
 namespace API.Controllers;
 
@@ -41,7 +41,7 @@ public class AccountRoleController : ControllerBase
             {
                 Code = StatusCodes.Status404NotFound,
                 Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
+                Message = Messages.DataNotFound
 
             });
         }
@@ -66,7 +66,7 @@ public class AccountRoleController : ControllerBase
             {
                 Code = StatusCodes.Status404NotFound,
                 Status = HttpStatusCode.NotFound.ToString(),
-                Message = Message.DataNotFound
+                Message = Messages.DataNotFound
             });
         }
 
@@ -95,7 +95,7 @@ public class AccountRoleController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
+                Message = Messages.FailedToCreateData,
                 Error = ex.Message
             };
 
@@ -118,7 +118,7 @@ public class AccountRoleController : ControllerBase
                 {
                     Code = StatusCodes.Status404NotFound,
                     Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
+                    Message = Messages.DataNotFound
                 });
             }
 
@@ -131,11 +131,11 @@ public class AccountRoleController : ControllerBase
             // Throw an exception if update failed
             if (!result)
             {
-                throw new ExceptionHandler(Message.ErrorOnUpdatingData);
+                throw new ExceptionHandler(Messages.ErrorOnUpdatingData);
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataUpdated);
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Messages.DataUpdated);
 
             return Ok(response);
         }
@@ -145,7 +145,7 @@ public class AccountRoleController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
+                Message = Messages.FailedToCreateData,
                 Error = ex.Message
             };
 
@@ -168,7 +168,7 @@ public class AccountRoleController : ControllerBase
                 {
                     Code = StatusCodes.Status404NotFound,
                     Status = HttpStatusCode.NotFound.ToString(),
-                    Message = Message.DataNotFound
+                    Message = Messages.DataNotFound
                 });
             }
 
@@ -178,11 +178,11 @@ public class AccountRoleController : ControllerBase
             // Throw an exception if update failed
             if (!result)
             {
-                throw new ExceptionHandler(Message.ErrorOnDeletingData);
+                throw new ExceptionHandler(Messages.ErrorOnDeletingData);
             }
 
             // Return success response
-            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Message.DataDeleted);
+            ResponseOKHandler<string> response = new ResponseOKHandler<string>(Messages.DataDeleted);
 
             return Ok(response);
         }
@@ -192,7 +192,7 @@ public class AccountRoleController : ControllerBase
             {
                 Code = StatusCodes.Status500InternalServerError,
                 Status = HttpStatusCode.InternalServerError.ToString(),
-                Message = Message.FailedToCreateData,
+                Message = Messages.FailedToCreateData,
                 Error = ex.Message
             };
 

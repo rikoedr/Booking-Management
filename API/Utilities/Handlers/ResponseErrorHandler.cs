@@ -1,7 +1,7 @@
 ﻿namespace API.Utilities.Handlers;
 
 /*
- * Response Erro handler adalah class yang berfungsi sebagai format response API
+ * Response Error handler adalah class yang berfungsi sebagai format response API
  * berkategori Error atau gagal.
  */
 public class ResponseErrorHandler
@@ -10,4 +10,5 @@ public class ResponseErrorHandler
     public string Status { get; set; }
     public string Message { get; set; }
     public string? Error { get; set; }
+
 }
