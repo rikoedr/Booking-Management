@@ -3,7 +3,7 @@ using API.Models;
 using API.Utilities;
 using API.Utilities.Handlers;
 
-namespace API.DataTransferObjects.EmployeeAccounts;
+namespace API.DataTransferObjects.Accounts;
 
 public class CreateEmployeeAccountDTO
 {

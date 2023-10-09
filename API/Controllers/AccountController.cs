@@ -6,7 +6,6 @@ using API.Utilities.Handlers;
 using System.Net;
 using API.Repositories;
 using API.DataTransferObjects.Accounts;
-using API.DataTransferObjects.EmployeeAccounts;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using API.Data;

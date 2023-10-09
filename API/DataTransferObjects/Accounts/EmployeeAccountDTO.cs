@@ -1,6 +1,6 @@
 ﻿using API.Models;
 
-namespace API.DataTransferObjects.EmployeeAccounts;
+namespace API.DataTransferObjects.Accounts;
 
 public class EmployeeAccountDTO
 {

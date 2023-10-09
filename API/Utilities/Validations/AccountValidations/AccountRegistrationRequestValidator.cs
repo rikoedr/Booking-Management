@@ -1,4 +1,4 @@
-﻿using API.DataTransferObjects.EmployeeAccounts;
+﻿using API.DataTransferObjects.Accounts;
 using API.Utilities.Responses;
 using FluentValidation;
 

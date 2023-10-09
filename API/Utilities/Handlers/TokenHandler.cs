@@ -24,7 +24,7 @@ public class TokenHandler : ITokenHandler
                 issuer: _configuration["JwtService:Issuer"],
                 audience: _configuration["JwtService:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(5),
+                expires: DateTime.Now.AddMinutes(60),
                 signingCredentials: signingCredentials);
 
         string? encodedToken = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
