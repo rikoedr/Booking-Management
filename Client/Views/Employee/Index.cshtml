@@ -1,0 +1,173 @@
+﻿@model IEnumerable<API.DataTransferObjects.EmployeeDTO>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<h1>Employee Data Management</h1>
+
+<p>
+    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <!--
+            <th>
+                @Html.DisplayNameFor(model => model.Guid)
+            </th>
+            -->
+            <th>
+                @Html.DisplayNameFor(model => model.NIK)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FirstName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.LastName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Gender)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.BirthDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.HiringDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Email)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PhoneNumber)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <!--
+            <td>
+                @Html.DisplayFor(modelItem => item.Guid)
+            </td>
+            -->
+            <td>
+                @Html.DisplayFor(modelItem => item.NIK)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FirstName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.LastName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Gender)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.BirthDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.HiringDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PhoneNumber)
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
+                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
+                @Html.ActionLink("Delete", "Delete", new { id=item.Guid })
+                <button type="button" id="@item.Guid" class="btn btn-danger btn-delete">Delete</button>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+<!-- Create Employee Modal-->
+<div class="modal fade" id="modal-create" tabindex="-1" aria-labelledby="modal-create" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <input type="text" id="input-firstname" class="form-control" placeholder="FIRST NAME" aria-label="First name">
+                            </div>
+                            <div class="col">
+                                <input type="text" id="input-lastname" class="form-control" placeholder="LAST NAME" aria-label="Last name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="input-birthdate" class="form-label">BIRTHDATE</label>
+                        <input type="date" class="form-control" id="input-birthdate" placeholder="BIRTHDATE">
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select form-select-sm" aria-label=".form-select-sm example" id="select-gender">
+                            <option>Select Gender</option>
+                            <option value="0">Male</option>
+                            <option value="1">Female</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="input-hiring-date" class="form-label">HIRING DATE</label>
+                        <input type="date" class="form-control" id="input-hiring-date" placeholder="HIRING DATE">
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="input-email" placeholder="EMAIL ADDRESS">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="input-phone-number" placeholder="PHONE NUMBER">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="input-major" placeholder="MAJOR">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="input-degree" placeholder="DEGREE">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="input-gpa" placeholder="GPA">
+                    </div>
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <input type="text" id="input-university-name" class="form-control" placeholder="UNIVERSITY NAME" aria-label="First name">
+                            </div>
+                            <div class="col">
+                                <input type="text" id="input-university-code" class="form-control" placeholder="UNIVERSITY CODE" aria-label="Last name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" id="input-password" class="form-control" placeholder="PASSWORD" aria-describedby="passwordHelpBlock">
+                        <div id="passwordHelpBlock" class="form-text">
+                            Your password must be 8-20 characters long, contain letters and numbers, and must not contain spaces, special characters, or emoji.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" id="input-confirm-password" class="form-control" placeholder="CONFIRM PASSWORD" aria-describedby="passwordHelpBlock">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a id="button-create" class="btn btn-primary" asp-action="Create">Create</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script type="module" src="~/js/Employee.js" asp-append-version="true"></script>
+}
+

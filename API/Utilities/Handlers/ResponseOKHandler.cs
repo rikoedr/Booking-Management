@@ -14,6 +14,11 @@ public class ResponseOKHandler<TEntity>
     public string Message { get; set; }
     public TEntity? Data { get; set; }
 
+    public ResponseOKHandler()
+    {
+        
+    }
+
     // Format response sukses beserta data
     public ResponseOKHandler(TEntity? data)
     {

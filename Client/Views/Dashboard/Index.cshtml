@@ -1,0 +1,58 @@
+﻿@*
+
+*@
+@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+<div id="content-area">
+    <table class="table table-striped" id="table-poke">
+        <thead>
+            <tr>
+                <th scope="col">No.</th>
+                <th scope="col">Pokemon Type</th>
+                <th scope="col">Detail</th>
+            </tr>
+        </thead>
+        <tbody id="pokemon-list-tbody">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="modalPoke" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modal-title-h1">Modal title</h1>
+                <div id="badges-div">
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div id="artwork-div">
+                </div>
+
+                <h1 class="display-5">Stats</h1>
+                <div id="attribute-div">
+                </div>
+
+                <br />
+                <br />
+                <h1 class="display-5">Moves</h1>
+                <ul class="list-group" id="moves-list-group">
+                </ul>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/js/pokemon.js" asp-append-version="true"></script>
+}
+

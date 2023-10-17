@@ -1,4 +1,5 @@
 ﻿using API.Models;
+using API.Utilities.Handlers;
 
 namespace API.DataTransferObjects;
 
@@ -8,6 +9,7 @@ public class EmployeeDTO
     public string NIK { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
+    public string Gender { get; set; }
     public DateTime BirthDate { get; set; }
     public DateTime HiringDate { get; set; }
     public string Email { get; set; }
@@ -21,6 +23,7 @@ public class EmployeeDTO
             NIK = employee.NIK,
             FirstName = employee.FirstName,
             LastName = employee.LastName,
+            Gender = GenderHandler.toString(employee.Gender),
             BirthDate = employee.BirthDate,
             HiringDate = employee.HiringDate,
             Email = employee.Email,
